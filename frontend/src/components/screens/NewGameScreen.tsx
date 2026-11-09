@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { WebSocketClient } from '@/services/websocket';
 import { createLogger } from '@/services/logger';
+import { useI18n } from '@/i18n/I18nContext';
 
 import { DECISION_CASES } from '@/data/decisionCases';
 
@@ -136,6 +137,7 @@ const SCENARIOS = [
 ];
 
 export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
+  const { t, formatMoney } = useI18n();
   const [config, setConfig] = useState<GameConfig>({ ...DEFAULT_CONFIG });
   const [hoveredPreset, setHoveredPreset] = useState<string | null>(null);
   const [mode, setMode] = useState<'sandbox' | 'scenarios' | 'history' | 'learn'>('sandbox');
@@ -192,6 +194,28 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
 
   const activePreset = PRESETS.find(p => p.key === config.difficulty);
 
+  const presetLabel = (key: string, fallback: string) => {
+    if (key === 'easy') return t('newGame.beginner');
+    if (key === 'normal') return t('newGame.trader');
+    if (key === 'hard') return t('newGame.wallStreet');
+    return fallback;
+  };
+  const presetSub = (key: string, fallback: string) => {
+    if (key === 'easy') return t('newGame.learnRopes');
+    if (key === 'normal') return t('newGame.standardExperience');
+    if (key === 'hard') return t('newGame.tightMargins');
+    return fallback;
+  };
+  const translatedDiff = (label: string) => {
+    if (label === 'Very Easy') return t('newGame.veryEasy');
+    if (label === 'Easy') return t('newGame.veryEasy');
+    if (label === 'Normal') return t('newGame.normal');
+    if (label === 'Challenging') return t('newGame.challenging');
+    if (label === 'Hard') return t('newGame.high');
+    if (label === 'Brutal') return t('newGame.brutal');
+    return label;
+  };
+
   return (
     <div style={S.screen}>
       <div style={S.bgGrad} />
@@ -201,34 +225,34 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
         <button style={S.backBtn} onClick={onBack}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-accent)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-        >Back</button>
+        >{t('newGame.back')}</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <h1 style={S.title}>NEW GAME</h1>
+          <h1 style={S.title}>{t('newGame.newGame')}</h1>
           <div style={{ display: 'flex', background: 'var(--bg-tertiary)', borderRadius: '6px', overflow: 'hidden' }}>
             <button onClick={() => setMode('sandbox')} style={{
               padding: '6px 16px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
               fontFamily: 'var(--font-ui)', letterSpacing: '1px',
               background: mode === 'sandbox' ? 'var(--text-accent)' : 'transparent',
               color: mode === 'sandbox' ? 'var(--text-primary)' : 'var(--text-secondary)',
-            }}>SANDBOX</button>
+            }}>{t('newGame.sandbox')}</button>
             <button onClick={() => setMode('scenarios')} style={{
               padding: '6px 16px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
               fontFamily: 'var(--font-ui)', letterSpacing: '1px',
               background: mode === 'scenarios' ? 'var(--text-accent)' : 'transparent',
               color: mode === 'scenarios' ? 'var(--text-primary)' : 'var(--text-secondary)',
-            }}>SCENARIOS</button>
+            }}>{t('newGame.scenarios')}</button>
             <button onClick={() => setMode('history')} style={{
               padding: '6px 16px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
               fontFamily: 'var(--font-ui)', letterSpacing: '1px',
               background: mode === 'history' ? 'var(--warning)' : 'transparent',
               color: mode === 'history' ? 'var(--text-primary)' : 'var(--text-secondary)',
-            }}>HISTORY</button>
+            }}>{t('newGame.history')}</button>
             <button onClick={() => setMode('learn')} style={{
               padding: '6px 16px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
               fontFamily: 'var(--font-ui)', letterSpacing: '1px',
               background: mode === 'learn' ? 'var(--green-primary)' : 'transparent',
               color: mode === 'learn' ? 'var(--text-primary)' : 'var(--text-secondary)',
-            }}>LEARN</button>
+            }}>{t('newGame.learn')}</button>
           </div>
         </div>
         <div style={{ width: 70 }} />
@@ -239,7 +263,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
       {mode === 'history' && (
         <div style={{ flex: 1, padding: '24px 40px', overflowY: 'auto' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 16px', textAlign: 'center' }}>
-            Relive the most dramatic moments in market history. Each scenario forces the corresponding crisis arc.
+            {t('newGame.historyIntro')}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
             {[
@@ -276,9 +300,9 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', lineHeight: 1.4 }}>{h.desc}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="mono" style={{ fontSize: '13px', fontWeight: 700, color: h.ret.startsWith('-') ? 'var(--red-primary)' : h.ret === '???' ? 'var(--text-disabled)' : 'var(--green-primary)' }}>
-                    S&P 500: {h.ret}
+                    {t('newGame.sp500')}: {h.ret}
                   </span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-disabled)' }}>Can you beat it?</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-disabled)' }}>{t('newGame.canYouBeat')}</span>
                 </div>
               </div>
             ))}
@@ -296,7 +320,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
                   background: 'var(--warning)', color: 'var(--bg-primary)',
                   letterSpacing: '1px',
                 }}
-              >RELIVE HISTORY</button>
+              >{t('newGame.reliveHistory')}</button>
             </div>
           )}
         </div>
@@ -305,7 +329,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
       {mode === 'learn' && (
         <div style={{ flex: 1, padding: '24px 40px', overflowY: 'auto' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 16px', textAlign: 'center' }}>
-            Guided scenarios with decision points. Learn by doing — choose your action and see the outcome.
+            {t('newGame.learnIntro')}
           </p>
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px',
@@ -335,7 +359,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
                     <div style={{ marginTop: 8 }}>
                       <p style={{ fontSize: '12px', color: 'var(--text-primary)', lineHeight: 1.5, margin: '0 0 8px' }}>{dc.description}</p>
                       <div style={{ fontSize: '10px', color: 'var(--text-disabled)', marginBottom: 6 }}>
-                        {dc.durationMinutes} min · {dc.decisions.length} decision{dc.decisions.length > 1 ? 's' : ''}
+                        {dc.durationMinutes} {t('newGame.minSuffix')} · {dc.decisions.length} {dc.decisions.length > 1 ? t('newGame.decisions') : t('newGame.decision')}
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 10 }}>
                         {dc.learningGoals.map(g => (
@@ -363,7 +387,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
                         width: '100%', padding: '8px', borderRadius: 6, border: 'none',
                         background: dc.color, color: 'var(--text-primary)', fontWeight: 700, fontSize: '12px',
                         cursor: 'pointer',
-                      }}>Start Case</button>
+                      }}>{t('newGame.startCase')}</button>
                     </div>
                   )}
                 </button>
@@ -385,7 +409,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
                 background: scenarioFilter === d ? 'var(--text-accent)' : 'var(--bg-tertiary)',
                 color: scenarioFilter === d ? 'var(--text-primary)' :
                   d === 'Easy' ? 'var(--green-primary)' : d === 'Brutal' ? 'var(--red-primary)' : 'var(--text-secondary)',
-              }}>{d} {d !== 'All' ? `(${SCENARIOS.filter(s => s.diff === d).length})` : `(${SCENARIOS.length})`}</button>
+              }}>{d === 'All' ? t('newGame.filterAll') : translatedDiff(d)} {d !== 'All' ? `(${SCENARIOS.filter(s => s.diff === d).length})` : `(${SCENARIOS.length})`}</button>
             ))}
           </div>
           <div style={{
@@ -414,7 +438,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
                   </div>
                   <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px', lineHeight: 1.4 }}>{sc.desc}</p>
                   <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: 'var(--text-disabled)' }}>
-                    <span className="mono">${sc.cash.toLocaleString()}</span>
+                    <span className="mono">{formatMoney(sc.cash, { maximumFractionDigits: 0 })}</span>
                     <span>{sc.time}</span>
                   </div>
                 </button>
@@ -434,7 +458,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
                   color: 'var(--text-primary)', border: 'none', cursor: 'pointer', letterSpacing: '1px',
                   boxShadow: '0 0 20px color-mix(in srgb, var(--green-primary) 30%, transparent)',
                 }}
-              >Start Scenario</button>
+              >{t('newGame.startScenario')}</button>
             </div>
           )}
         </div>
@@ -445,11 +469,13 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
 
         {/* LEFT COLUMN — Presets + Difficulty Meter */}
         <div style={S.colLeft}>
-          <SectionHeader label="Difficulty Preset" />
+          <SectionHeader label={t('newGame.difficultyPreset')} />
           <div style={S.presetList}>
             {PRESETS.map(p => {
               const active = config.difficulty === p.key;
               const hov = hoveredPreset === p.key;
+              const label = presetLabel(p.key, p.label);
+              const sub = presetSub(p.key, p.sub);
               return (
                 <button key={p.key} onClick={() => selectPreset(p)}
                   onMouseEnter={() => setHoveredPreset(p.key)}
@@ -462,15 +488,15 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
                   }}>
                   <div style={S.presetTop}>
                     <span style={{ ...S.presetIcon, color: active ? p.color : 'var(--text-disabled)' }}>{p.icon}</span>
-                    <span style={{ ...S.presetLabel, color: active ? p.color : 'var(--text-primary)' }}>{p.label}</span>
+                    <span style={{ ...S.presetLabel, color: active ? p.color : 'var(--text-primary)' }}>{label}</span>
                   </div>
-                  <span style={S.presetSub}>{p.sub}</span>
+                  <span style={S.presetSub}>{sub}</span>
                   <div style={S.presetStats}>
-                    <span className="mono">${p.cash.toLocaleString()}</span>
+                    <span className="mono">{formatMoney(p.cash, { maximumFractionDigits: 0 })}</span>
                     <span style={S.presetDot} />
-                    <span className="mono">{p.commission === 0 ? 'No fees' : `$${p.commission} fee`}</span>
+                    <span className="mono">{p.commission === 0 ? t('newGame.noFees') : t('newGame.feeSuffix', { amount: p.commission })}</span>
                     <span style={S.presetDot} />
-                    <span className="mono">{p.stocks} stocks</span>
+                    <span className="mono">{p.stocks} {t('newGame.stocksUnit')}</span>
                   </div>
                 </button>
               );
@@ -479,7 +505,7 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
 
           {/* Difficulty Meter */}
           <div style={S.meterBox}>
-            <SectionHeader label="Difficulty Rating" />
+            <SectionHeader label={t('newGame.difficultyRating')} />
             <div style={S.meterRow}>
               <div style={S.meterTrack}>
                 <div style={{
@@ -496,25 +522,25 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
               </div>
             </div>
             <div style={S.meterLabels}>
-              <span style={{ fontSize: '10px', color: 'var(--green-primary)', fontFamily: 'var(--font-mono)' }}>EASY</span>
+              <span style={{ fontSize: '10px', color: 'var(--green-primary)', fontFamily: 'var(--font-mono)' }}>{t('newGame.easy')}</span>
               <div style={{ textAlign: 'center' }}>
                 <span className="mono" style={{ fontSize: '28px', fontWeight: 700, color: diffInfo.color, textShadow: `0 0 20px ${diffInfo.color}40` }}>
                   {diffScore}%
                 </span>
                 <div style={{ fontSize: '11px', color: diffInfo.color, fontWeight: 600, letterSpacing: '1px', marginTop: '-2px' }}>
-                  {diffInfo.label.toUpperCase()}
+                  {translatedDiff(diffInfo.label).toUpperCase()}
                 </div>
               </div>
-              <span style={{ fontSize: '10px', color: 'var(--red-primary)', fontFamily: 'var(--font-mono)' }}>HARD</span>
+              <span style={{ fontSize: '10px', color: 'var(--red-primary)', fontFamily: 'var(--font-mono)' }}>{t('newGame.hard')}</span>
             </div>
           </div>
 
           {/* Player Name */}
           <div style={{ marginTop: '16px' }}>
-            <SectionHeader label="Player" />
+            <SectionHeader label={t('newGame.player')} />
             <div style={S.fieldRow}>
-              <label style={S.fieldLabel}>Name</label>
-              <input style={S.input} type="text" placeholder="Trader"
+              <label style={S.fieldLabel}>{t('newGame.name')}</label>
+              <input style={S.input} type="text" placeholder={t('newGame.traderPlaceholder')}
                 value={config.playerName}
                 onChange={e => setConfig(p => ({ ...p, playerName: e.target.value }))} />
             </div>
@@ -526,53 +552,53 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
           <div style={S.scrollArea}>
 
             {/* Economy */}
-            <SectionHeader label="Economy" />
-            <SliderRow label="Starting Capital" value={config.startingCash} min={5_000} max={500_000} step={5_000}
-              fmt={v => `$${v.toLocaleString()}`} onChange={v => set('startingCash', v)} />
-            <SliderRow label="Commission" value={config.commission} min={0} max={25} step={0.05}
-              fmt={v => v === 0 ? 'Free' : `$${v.toFixed(2)}`} onChange={v => set('commission', v)} />
-            <SliderRow label="Number of Stocks" value={config.stockCount} min={50} max={500} step={10}
+            <SectionHeader label={t('newGame.economy')} />
+            <SliderRow label={t('newGame.startingCapital')} value={config.startingCash} min={5_000} max={500_000} step={5_000}
+              fmt={v => formatMoney(v, { maximumFractionDigits: 0 })} onChange={v => set('startingCash', v)} />
+            <SliderRow label={t('newGame.commission')} value={config.commission} min={0} max={25} step={0.05}
+              fmt={v => v === 0 ? t('newGame.free') : formatMoney(v, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} onChange={v => set('commission', v)} />
+            <SliderRow label={t('newGame.numberOfStocks')} value={config.stockCount} min={50} max={500} step={10}
               fmt={v => `${v}`} onChange={v => set('stockCount', v)} />
 
             {/* Market Behavior */}
-            <SectionHeader label="Market Behavior" />
-            <SliderRow label="Volatility" value={config.volatility} min={0.3} max={2.5} step={0.1}
-              fmt={v => v <= 0.5 ? 'Very Low' : v <= 0.8 ? 'Low' : v <= 1.2 ? 'Normal' : v <= 1.7 ? 'High' : 'Extreme'}
+            <SectionHeader label={t('newGame.marketBehavior')} />
+            <SliderRow label={t('newGame.volatility')} value={config.volatility} min={0.3} max={2.5} step={0.1}
+              fmt={v => v <= 0.5 ? t('newGame.veryLow') : v <= 0.8 ? t('newGame.low') : v <= 1.2 ? t('newGame.normal') : v <= 1.7 ? t('newGame.high') : t('newGame.extreme')}
               onChange={v => set('volatility', v)} />
-            <SliderRow label="Event Frequency" value={config.eventFrequency} min={0.2} max={3.0} step={0.1}
-              fmt={v => v <= 0.4 ? 'Very Rare' : v <= 0.7 ? 'Rare' : v <= 1.3 ? 'Normal' : v <= 2.0 ? 'Frequent' : 'Chaotic'}
+            <SliderRow label={t('newGame.eventFrequency')} value={config.eventFrequency} min={0.2} max={3.0} step={0.1}
+              fmt={v => v <= 0.4 ? t('newGame.veryRare') : v <= 0.7 ? t('newGame.rare') : v <= 1.3 ? t('newGame.normal') : v <= 2.0 ? t('newGame.frequent') : t('newGame.chaotic')}
               onChange={v => set('eventFrequency', v)} />
-            <SliderRow label="AI Aggression" value={config.aiAggression} min={0.3} max={2.5} step={0.1}
-              fmt={v => v <= 0.5 ? 'Passive' : v <= 0.8 ? 'Calm' : v <= 1.2 ? 'Normal' : v <= 1.7 ? 'Aggressive' : 'Ruthless'}
+            <SliderRow label={t('newGame.aiAggression')} value={config.aiAggression} min={0.3} max={2.5} step={0.1}
+              fmt={v => v <= 0.5 ? t('newGame.passive') : v <= 0.8 ? t('newGame.calm') : v <= 1.2 ? t('newGame.normal') : v <= 1.7 ? t('newGame.aggressive') : t('newGame.ruthless')}
               onChange={v => set('aiAggression', v)} />
 
             {/* Rules */}
-            <SectionHeader label="Rules" />
-            <ToggleRow label="Dividends" desc="Companies pay quarterly dividends" value={config.enableDividends} onChange={v => set('enableDividends', v)} />
-            <ToggleRow label="Short Selling" desc="Bet against stocks" value={config.enableShortSelling} onChange={v => set('enableShortSelling', v)} />
-            <ToggleRow label="Market Events" desc="News, crashes, IPOs" value={config.enableEvents} onChange={v => set('enableEvents', v)} />
-            <ToggleRow label="Margin Trading" desc="Borrow money to trade" value={config.enableMargin} onChange={v => set('enableMargin', v)} />
-            <ToggleRow label="Bankruptcy" desc="Game over at $0" value={config.enableBankruptcy} onChange={v => set('enableBankruptcy', v)} />
-            <ToggleRow label="Tutorial" desc="Show hints for new players" value={config.showTutorial} onChange={v => set('showTutorial', v)} />
+            <SectionHeader label={t('newGame.rules')} />
+            <ToggleRow label={t('newGame.dividends')} desc={t('newGame.dividendsDesc')} value={config.enableDividends} onChange={v => set('enableDividends', v)} />
+            <ToggleRow label={t('newGame.shortSelling')} desc={t('newGame.shortSellingDesc')} value={config.enableShortSelling} onChange={v => set('enableShortSelling', v)} />
+            <ToggleRow label={t('newGame.marketEvents')} desc={t('newGame.marketEventsDesc')} value={config.enableEvents} onChange={v => set('enableEvents', v)} />
+            <ToggleRow label={t('newGame.marginTrading')} desc={t('newGame.marginTradingDesc')} value={config.enableMargin} onChange={v => set('enableMargin', v)} />
+            <ToggleRow label={t('newGame.bankruptcy')} desc={t('newGame.bankruptcyDesc')} value={config.enableBankruptcy} onChange={v => set('enableBankruptcy', v)} />
+            <ToggleRow label={t('newGame.tutorial')} desc={t('newGame.tutorialDesc')} value={config.showTutorial} onChange={v => set('showTutorial', v)} />
 
             {/* Advanced */}
-            <SectionHeader label="Advanced" />
+            <SectionHeader label={t('newGame.advanced')} />
             <div style={S.fieldRow}>
               <div>
-                <label style={S.fieldLabel}>Market Seed</label>
-                <div style={S.fieldHint}>Same seed = same market</div>
+                <label style={S.fieldLabel}>{t('newGame.marketSeed')}</label>
+                <div style={S.fieldHint}>{t('newGame.sameSeed')}</div>
               </div>
-              <input style={{ ...S.input, width: '140px' }} type="text" placeholder="Random"
+              <input style={{ ...S.input, width: '140px' }} type="text" placeholder={t('newGame.random')}
                 value={config.seed} onChange={e => setConfig(p => ({ ...p, seed: e.target.value }))} />
             </div>
             <div style={{ ...S.fieldRow, marginTop: '8px' }}>
               <div>
-                <label style={S.fieldLabel}>Market Hours</label>
-                <div style={S.fieldHint}>Trading session length</div>
+                <label style={S.fieldLabel}>{t('newGame.marketHours')}</label>
+                <div style={S.fieldHint}>{t('newGame.tradingSession')}</div>
               </div>
               <div style={{ display: 'flex', gap: '4px' }}>
-                <SegBtn label="Realistic" active={config.marketHours === 'realistic'} onClick={() => set('marketHours', 'realistic')} />
-                <SegBtn label="Extended" active={config.marketHours === 'extended'} onClick={() => set('marketHours', 'extended')} />
+                <SegBtn label={t('newGame.realistic')} active={config.marketHours === 'realistic'} onClick={() => set('marketHours', 'realistic')} />
+                <SegBtn label={t('newGame.extended')} active={config.marketHours === 'extended'} onClick={() => set('marketHours', 'extended')} />
               </div>
             </div>
           </div>
@@ -580,16 +606,16 @@ export function NewGameScreen({ onStart, onBack, wsClient }: Props) {
           {/* Summary Bar + Start */}
           <div style={S.bottomBar}>
             <div style={S.summaryRow}>
-              <SumCell label="Capital" value={`$${config.startingCash.toLocaleString()}`} color="var(--green-primary)" />
-              <SumCell label="Fees" value={config.commission === 0 ? 'Free' : `$${config.commission.toFixed(2)}`} />
-              <SumCell label="Stocks" value={`${config.stockCount}`} />
-              <SumCell label="Difficulty" value={activePreset?.label || 'Custom'} color={activePreset?.color || 'var(--warning)'} />
-              <SumCell label="Rating" value={`${diffScore}%`} color={diffInfo.color} />
+              <SumCell label={t('newGame.capital')} value={formatMoney(config.startingCash, { maximumFractionDigits: 0 })} color="var(--green-primary)" />
+              <SumCell label={t('newGame.fees')} value={config.commission === 0 ? t('newGame.free') : formatMoney(config.commission, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} />
+              <SumCell label={t('newGame.stocks')} value={`${config.stockCount}`} />
+              <SumCell label={t('newGame.difficulty')} value={activePreset ? presetLabel(activePreset.key, activePreset.label) : t('newGame.custom')} color={activePreset?.color || 'var(--warning)'} />
+              <SumCell label={t('newGame.rating')} value={`${diffScore}%`} color={diffInfo.color} />
             </div>
             <button style={S.startBtn} onClick={handleStart}
               onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.transform = 'none'; }}
-            >Start Trading</button>
+            >{t('newGame.startTrading')}</button>
           </div>
         </div>
       </div>}

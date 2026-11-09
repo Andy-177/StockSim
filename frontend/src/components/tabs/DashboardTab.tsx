@@ -2,6 +2,7 @@ import { useMemo, useEffect } from 'react';
 import { useMarketStore } from '@/stores/marketStore';
 import { WebSocketClient } from '@/services/websocket';
 import { styles } from '@/styles/centralStyles';
+import { useI18n } from '@/i18n/I18nContext';
 
 interface DashboardTabProps {
   wsClient: WebSocketClient;
@@ -17,6 +18,7 @@ const getHeatColor = (pct: number) => {
 };
 
 export function DashboardTab({ wsClient }: DashboardTabProps) {
+  const { t, formatDate } = useI18n();
   const stockList = useMarketStore((s) => s.stockList);
   const stocks = useMarketStore((s) => s.stocks);
   const portfolio = useMarketStore((s) => s.portfolio);
@@ -77,8 +79,8 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
 
   return (
     <div style={styles.content}>
-      <h2 style={styles.heading}>Dashboard</h2>
-      <p style={styles.info}>{stockList.length} stocks loaded</p>
+      <h2 style={styles.heading}>{t('nav.dashboard')}</h2>
+      <p style={styles.info}>{t('dashboard.stocksLoaded', { count: stockList.length })}</p>
 
       {/* Market Overview Stats */}
       {stockList.length > 0 && (() => {
@@ -91,7 +93,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
         return (
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
             <div style={{ ...styles.summaryCard, flex: 1 }}>
-              <span style={styles.summaryLabel}>Market Index</span>
+              <span style={styles.summaryLabel}>{t('dashboard.marketIndex')}</span>
               <span className="mono" style={{
                 ...styles.summaryValue, fontSize: '16px',
                 color: avgChange >= 0 ? 'var(--green-primary)' : 'var(--red-primary)',
@@ -100,7 +102,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
               </span>
             </div>
             <div style={{ ...styles.summaryCard, flex: 1 }}>
-              <span style={styles.summaryLabel}>Advancing / Declining</span>
+              <span style={styles.summaryLabel}>{t('dashboard.advancingDeclining')}</span>
               <span style={styles.summaryValue}>
                 <span style={{ color: 'var(--green-primary)' }}>{advancing}</span>
                 {' / '}
@@ -109,7 +111,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
               </span>
             </div>
             <div style={{ ...styles.summaryCard, flex: 1 }}>
-              <span style={styles.summaryLabel}>Total Volume</span>
+              <span style={styles.summaryLabel}>{t('dashboard.totalVolume')}</span>
               <span className="mono" style={styles.summaryValue}>
                 {totalVolume >= 1e9 ? `${(totalVolume / 1e9).toFixed(1)}B` :
                  totalVolume >= 1e6 ? `${(totalVolume / 1e6).toFixed(1)}M` :
@@ -121,7 +123,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
       })()}
 
       {/* Sector Heatmap — Treemap-style, proportional to Market Cap */}
-      <h3 style={styles.moversTitle}>Sector Heatmap</h3>
+      <h3 style={styles.moversTitle}>{t('dashboard.sectorHeatmap')}</h3>
       {(() => {
         const totalCap = sectorData.reduce((s, d) => s + d.totalCap, 0) || 1;
         // Split into 2 rows for treemap feel
@@ -185,7 +187,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
       {/* Top Movers + Market Breadth side by side */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
         <div>
-          <h3 style={{ ...styles.moversTitle, color: 'var(--green-primary)' }}>Top Gainers</h3>
+          <h3 style={{ ...styles.moversTitle, color: 'var(--green-primary)' }}>{t('dashboard.topGainers')}</h3>
           {topMovers.gainers.map((s) => (
               <div key={s.symbol} style={{ ...styles.moverRow, cursor: 'pointer' }} onClick={() => selectStock(s.symbol)}>
                 <span className="mono" style={styles.moverSymbol}>{s.symbol}</span>
@@ -195,7 +197,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
             ))}
         </div>
         <div>
-          <h3 style={{ ...styles.moversTitle, color: 'var(--red-primary)' }}>Top Losers</h3>
+          <h3 style={{ ...styles.moversTitle, color: 'var(--red-primary)' }}>{t('dashboard.topLosers')}</h3>
           {topMovers.losers.map((s) => (
               <div key={s.symbol} style={{ ...styles.moverRow, cursor: 'pointer' }} onClick={() => selectStock(s.symbol)}>
                 <span className="mono" style={styles.moverSymbol}>{s.symbol}</span>
@@ -205,15 +207,15 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
             ))}
         </div>
         <div>
-          <h3 style={styles.moversTitle}>Market Breadth</h3>
+          <h3 style={styles.moversTitle}>{t('dashboard.marketBreadth')}</h3>
           <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '10px', color: 'var(--text-disabled)', display: 'block' }}>BREADTH</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-disabled)', display: 'block' }}>{t('dashboard.breadth')}</span>
             <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', margin: '4px 0', background: 'var(--bg-tertiary)' }}>
               <div style={{ width: `${topMovers.breadthPct}%`, background: 'var(--green-primary)', transition: 'width 300ms' }} />
             </div>
-            <span className="mono" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{topMovers.breadthPct.toFixed(0)}% positive</span>
+            <span className="mono" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('dashboard.positivePct', { pct: topMovers.breadthPct.toFixed(0) })}</span>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-disabled)', marginBottom: '4px' }}>HIGH VOLUME</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-disabled)', marginBottom: '4px' }}>{t('dashboard.highVolume')}</div>
           {topMovers.highVolume.map(s => (
             <div key={s.symbol} style={{ ...styles.moverRow, cursor: 'pointer' }} onClick={() => selectStock(s.symbol)}>
               <span className="mono" style={styles.moverSymbol}>{s.symbol}</span>
@@ -228,7 +230,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
       {/* Sector Rotation Momentum */}
       {sectorData.length > 2 && (
         <div style={{ marginBottom: '20px' }}>
-          <h3 style={styles.moversTitle}>Sector Rotation</h3>
+          <h3 style={styles.moversTitle}>{t('dashboard.sectorRotation')}</h3>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {sectorData.slice(0, 4).map(s => (
               <div key={s.name} style={{
@@ -236,7 +238,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                 border: '1px solid color-mix(in srgb, var(--green-primary) 20%, transparent)', borderRadius: '6px',
                 padding: '8px 10px', textAlign: 'center',
               }}>
-                <div style={{ fontSize: '10px', color: 'var(--green-primary)', fontWeight: 600, letterSpacing: '0.5px' }}>INFLOW</div>
+                <div style={{ fontSize: '10px', color: 'var(--green-primary)', fontWeight: 600, letterSpacing: '0.5px' }}>{t('dashboard.inflow')}</div>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.name}</div>
                 <div className="mono" style={{ fontSize: '13px', color: 'var(--green-primary)', fontWeight: 700 }}>
                   +{s.avgChange.toFixed(2)}%
@@ -250,7 +252,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                 border: '1px solid color-mix(in srgb, var(--red-primary) 15%, transparent)', borderRadius: '6px',
                 padding: '8px 10px', textAlign: 'center',
               }}>
-                <div style={{ fontSize: '10px', color: 'var(--red-primary)', fontWeight: 600, letterSpacing: '0.5px' }}>OUTFLOW</div>
+                <div style={{ fontSize: '10px', color: 'var(--red-primary)', fontWeight: 600, letterSpacing: '0.5px' }}>{t('dashboard.outflow')}</div>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{s.name}</div>
                 <div className="mono" style={{ fontSize: '13px', color: 'var(--red-primary)', fontWeight: 700 }}>
                   {s.avgChange.toFixed(2)}%
@@ -264,7 +266,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
       {/* Developing Stories (Active Arcs) */}
       {activeArcs.length > 0 && (
         <div style={{ marginBottom: '20px' }}>
-          <h3 style={styles.moversTitle}>Developing Stories</h3>
+          <h3 style={styles.moversTitle}>{t('dashboard.developingStories')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
             {activeArcs.map((arc) => (
               <div
@@ -294,7 +296,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                     color: arc.phase === 1 ? 'var(--warning)' :
                            arc.phase === 2 ? 'var(--chart-orange)' : 'var(--red-primary)',
                   }}>
-                    PHASE {arc.phase}/3
+                    {t('dashboard.phase', { current: arc.phase })}
                   </span>
                 </div>
               </div>
@@ -310,16 +312,16 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
             flex: 1, background: 'var(--bg-secondary)', border: '1px solid var(--border)',
             borderRadius: '6px', padding: '12px', textAlign: 'center',
           }}>
-            <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px', display: 'block' }}>MARKET PHASE</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px', display: 'block' }}>{t('dashboard.marketPhase')}</span>
             <span className="mono" style={{
               fontSize: '20px', fontWeight: 700, display: 'block', marginTop: '4px',
               color: marketPhase === 'Bull' ? 'var(--green-primary)' :
                      marketPhase === 'Bear' ? 'var(--red-primary)' : 'var(--warning)',
             }}>
-              {marketPhase === 'Bull' ? '▲ BULL' : marketPhase === 'Bear' ? '▼ BEAR' : '◆ NEUTRAL'}
+              {marketPhase === 'Bull' ? t('dashboard.bull') : marketPhase === 'Bear' ? t('dashboard.bear') : t('dashboard.neutral')}
             </span>
             <span className="mono" style={{ fontSize: '11px', color: 'var(--text-disabled)' }}>
-              Sentiment: {economicData.marketSentiment >= 0 ? '+' : ''}{economicData.marketSentiment.toFixed(2)}
+              {t('dashboard.sentiment', { value: `${economicData.marketSentiment >= 0 ? '+' : ''}${economicData.marketSentiment.toFixed(2)}` })}
             </span>
           </div>
           <div style={{
@@ -341,14 +343,14 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                      vix < 30 ? 'var(--warning)' :
                      vix < 50 ? 'var(--chart-orange)' : 'var(--red-primary)',
             }}>
-              {vix < 15 ? 'LOW VOL' : vix < 20 ? 'CALM' : vix < 30 ? 'ELEVATED' : vix < 50 ? 'HIGH' : 'EXTREME'}
+              {vix < 15 ? t('dashboard.lowVol') : vix < 20 ? t('dashboard.calm') : vix < 30 ? t('dashboard.elevated') : vix < 50 ? t('dashboard.high') : t('dashboard.extremeVol')}
             </span>
           </div>
           <div style={{
             flex: 1, background: 'var(--bg-secondary)', border: '1px solid var(--border)',
             borderRadius: '6px', padding: '12px', textAlign: 'center',
           }}>
-            <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px', display: 'block' }}>YIELD CURVE</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px', display: 'block' }}>{t('dashboard.yieldCurve')}</span>
             {(() => {
               const y2 = economicData.indicators.interestRate;
               const y10 = economicData.indicators.treasuryYield10Y;
@@ -377,8 +379,8 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                     fontSize: '11px', fontWeight: 600,
                     color: inverted ? 'var(--red-primary)' : 'var(--green-primary)',
                   }}>
-                    Spread: {spread >= 0 ? '+' : ''}{spread.toFixed(2)}%
-                    {inverted && ' INVERTED'}
+                    {t('dashboard.spread', { value: `${spread >= 0 ? '+' : ''}${spread.toFixed(2)}%` })}
+                    {inverted && t('dashboard.inverted')}
                   </span>
                 </>
               );
@@ -388,7 +390,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
             flex: 1, background: 'var(--bg-secondary)', border: '1px solid var(--border)',
             borderRadius: '6px', padding: '12px', textAlign: 'center',
           }}>
-            <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px', display: 'block' }}>COMMODITIES</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px', display: 'block' }}>{t('dashboard.commodities')}</span>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px' }}>
               <div>
                 <span style={{ fontSize: '9px', color: 'var(--text-disabled)' }}>OIL</span>
@@ -412,18 +414,18 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
         {/* Economic Indicators */}
         {economicData && (
           <div>
-            <h3 style={styles.moversTitle}>Economic Indicators</h3>
+            <h3 style={styles.moversTitle}>{t('dashboard.economicIndicators')}</h3>
             <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
               {[
-                ['Fed Rate', `${economicData.indicators.interestRate.toFixed(2)}%`],
-                ['Inflation', `${economicData.indicators.inflationRate.toFixed(2)}%`],
-                ['Unemployment', `${economicData.indicators.unemploymentRate.toFixed(1)}%`],
-                ['GDP Growth', `${economicData.indicators.gdpGrowth.toFixed(2)}%`],
-                ['Consumer Conf.', economicData.indicators.consumerConfidence.toFixed(1)],
-                ['10Y Treasury', `${economicData.indicators.treasuryYield10Y.toFixed(2)}%`],
-                ['Oil (WTI)', `$${economicData.indicators.oilPrice.toFixed(2)}`],
-                ['Gold', `$${economicData.indicators.goldPrice.toFixed(0)}`],
-                ['Mfg PMI', economicData.indicators.manufacturingPMI.toFixed(1)],
+                [t('dashboard.fedRate'), `${economicData.indicators.interestRate.toFixed(2)}%`],
+                [t('dashboard.inflation'), `${economicData.indicators.inflationRate.toFixed(2)}%`],
+                [t('dashboard.unemployment'), `${economicData.indicators.unemploymentRate.toFixed(1)}%`],
+                [t('dashboard.gdpGrowth'), `${economicData.indicators.gdpGrowth.toFixed(2)}%`],
+                [t('dashboard.consumerConfidence'), economicData.indicators.consumerConfidence.toFixed(1)],
+                [t('dashboard.treasury10Y'), `${economicData.indicators.treasuryYield10Y.toFixed(2)}%`],
+                [t('dashboard.oilWti'), `$${economicData.indicators.oilPrice.toFixed(2)}`],
+                [t('dashboard.gold'), `$${economicData.indicators.goldPrice.toFixed(0)}`],
+                [t('dashboard.manufacturingPmi'), economicData.indicators.manufacturingPMI.toFixed(1)],
               ].map(([label, value], i) => (
                 <div key={label} style={{
                   display: 'flex', justifyContent: 'space-between', padding: '5px 10px',
@@ -444,7 +446,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                   marginTop: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border)',
                   borderRadius: '6px', padding: '10px 12px', textAlign: 'center',
                 }}>
-                  <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px' }}>FEAR & GREED INDEX</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px' }}>{t('dashboard.fearGreed')}</span>
                   <div className="mono" style={{
                     fontSize: '32px', fontWeight: 700, marginTop: '4px',
                     color: fg > 60 ? 'var(--green-primary)' :
@@ -457,10 +459,10 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                            fg > 40 ? 'var(--warning)' :
                            fg > 25 ? 'var(--chart-orange)' : 'var(--red-primary)',
                   }}>
-                    {fg > 75 ? 'EXTREME GREED' :
-                     fg > 60 ? 'GREED' :
-                     fg > 40 ? 'NEUTRAL' :
-                     fg > 25 ? 'FEAR' : 'EXTREME FEAR'}
+                    {fg > 75 ? t('dashboard.extremeGreed') :
+                     fg > 60 ? t('dashboard.greed') :
+                     fg > 40 ? t('dashboard.neutralFear') :
+                     fg > 25 ? t('dashboard.fear') : t('dashboard.extremeFear')}
                   </div>
                 </div>
               );
@@ -473,7 +475,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
           {/* Economic Events */}
           {economicData && economicData.upcomingEvents.length > 0 && (
             <div style={{ marginBottom: '12px' }}>
-              <h3 style={styles.moversTitle}>Economic Calendar</h3>
+              <h3 style={styles.moversTitle}>{t('dashboard.economicCalendar')}</h3>
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
                 {economicData.upcomingEvents.slice(0, 6).map((ev, i) => (
                   <div key={ev.id} style={{
@@ -484,14 +486,14 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                     <div>
                       <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ev.name}</span>
                       <span style={{ color: 'var(--text-disabled)', marginLeft: '6px' }}>
-                        {new Date(ev.scheduledDate).toLocaleDateString()}
+                        {formatDate(ev.scheduledDate)}
                       </span>
                     </div>
                     <span style={{
                       fontSize: '9px', fontWeight: 600, padding: '1px 6px', borderRadius: '3px',
                       background: ev.impact === 'High' ? 'color-mix(in srgb, var(--red-primary) 20%, transparent)' : 'color-mix(in srgb, var(--warning) 20%, transparent)',
                       color: ev.impact === 'High' ? 'var(--red-primary)' : 'var(--warning)',
-                    }}>{ev.impact}</span>
+                    }}>{ev.impact === 'High' ? t('dashboard.impactHigh') : t('dashboard.impactLow')}</span>
                   </div>
                 ))}
               </div>
@@ -501,7 +503,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
           {/* Earnings Calendar */}
           {earningsCalendar && (
             <div>
-              <h3 style={styles.moversTitle}>Earnings Calendar</h3>
+              <h3 style={styles.moversTitle}>{t('dashboard.earningsCalendar')}</h3>
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
                 {earningsCalendar.upcoming.length > 0 ? (
                   earningsCalendar.upcoming.slice(0, 8).map((e, i) => {
@@ -509,7 +511,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                     const reportDate = new Date(e.reportDate);
                     const now = gameTime ? new Date(gameTime) : new Date();
                     const diffDays = Math.round((reportDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                    const relDate = diffDays <= 0 ? 'Today' : diffDays === 1 ? 'Tomorrow' : `In ${diffDays} days`;
+                    const relDate = diffDays <= 0 ? t('dashboard.today') : diffDays === 1 ? t('dashboard.tomorrow') : t('dashboard.inDays', { days: diffDays });
                     const inPortfolio = portfolio?.positions?.some(p => p.symbol === e.symbol);
                     return (
                     <div key={`${e.symbol}-${e.reportDate}`} style={{
@@ -527,7 +529,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                       </div>
                       <span style={{ color: 'var(--text-secondary)' }}>Q{e.quarter}</span>
                       <span className="mono" style={{ color: 'var(--text-secondary)' }}>
-                        Est: ${e.expectedEPS.toFixed(2)}
+                        {t('dashboard.est', { price: `$${e.expectedEPS.toFixed(2)}` })}
                       </span>
                       <span style={{
                         color: diffDays <= 1 ? 'var(--warning)' : 'var(--text-disabled)',
@@ -540,13 +542,13 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                   })
                 ) : (
                   <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-disabled)', fontSize: '12px' }}>
-                    No upcoming earnings
+                    {t('dashboard.noEarnings')}
                   </div>
                 )}
               </div>
               {earningsCalendar.recent.length > 0 && (
                 <div style={{ marginTop: '8px' }}>
-                  <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px' }}>RECENT RESULTS</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '1px' }}>{t('dashboard.recentResults')}</span>
                   <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', marginTop: '4px' }}>
                     {earningsCalendar.recent.slice(0, 4).map((e, i) => (
                       <div key={`${e.symbol}-recent`} style={{
@@ -557,7 +559,7 @@ export function DashboardTab({ wsClient }: DashboardTabProps) {
                         <span className="mono" style={{ fontWeight: 700, width: '50px' }}>{e.symbol}</span>
                         <span className="mono" style={{
                           color: e.beat ? 'var(--green-primary)' : 'var(--red-primary)', fontWeight: 600,
-                        }}>{e.beat ? 'BEAT' : 'MISS'} {e.surprisePercent >= 0 ? '+' : ''}{e.surprisePercent.toFixed(1)}%</span>
+                        }}>{e.beat ? t('dashboard.beat') : t('dashboard.miss')} {e.surprisePercent >= 0 ? '+' : ''}{e.surprisePercent.toFixed(1)}%</span>
                         <span className="mono" style={{
                           color: e.priceImpact >= 0 ? 'var(--green-primary)' : 'var(--red-primary)',
                         }}>{e.priceImpact >= 0 ? '+' : ''}{e.priceImpact.toFixed(1)}%</span>

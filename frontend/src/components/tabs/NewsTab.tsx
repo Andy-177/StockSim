@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useMarketStore } from '@/stores/marketStore';
 import { styles } from '@/styles/centralStyles';
+import { useI18n } from '@/i18n/I18nContext';
 
 export function NewsTab() {
+  const { t, formatTime } = useI18n();
   const newsItems = useMarketStore((s) => s.newsItems);
   const activeArcs = useMarketStore((s) => s.activeArcs);
   const selectStock = useMarketStore((s) => s.selectStock);
@@ -26,7 +28,7 @@ export function NewsTab() {
               background: 'color-mix(in srgb, var(--red-primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--red-primary) 20%, transparent)',
               borderRadius: '6px', padding: '6px 10px', fontSize: '11px',
             }}>
-              <span style={{ color: 'var(--red-primary)', fontWeight: 700, fontSize: '9px' }}>DEVELOPING</span>
+              <span style={{ color: 'var(--red-primary)', fontWeight: 700, fontSize: '9px' }}>{t('newsTab.developing')}</span>
               <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{arc.name}</span>
               {arc.sector && <span style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>{arc.sector}</span>}
               {arc.path && <span style={{
@@ -34,19 +36,19 @@ export function NewsTab() {
                 background: arc.path === 'A' ? 'color-mix(in srgb, var(--green-primary) 15%, transparent)' : 'color-mix(in srgb, var(--red-primary) 15%, transparent)',
                 color: arc.path === 'A' ? 'var(--green-primary)' : 'var(--red-primary)',
                 fontWeight: 700,
-              }}>Path {arc.path}</span>}
-              <span className="mono" style={{ color: 'var(--text-disabled)', fontSize: '9px' }}>Phase {arc.phase + 1}</span>
+              }}>{t('newsTab.path', { path: arc.path })}</span>}
+              <span className="mono" style={{ color: 'var(--text-disabled)', fontSize: '9px' }}>{t('newsTab.phase', { phase: arc.phase + 1 })}</span>
             </div>
           ))}
         </div>
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <h2 style={{ ...styles.heading, marginBottom: 0 }}>
-          News Feed ({newsItems.length})
+          {t('newsTab.newsFeed', { count: newsItems.length })}
           {newsItems.length > 0 && (
             <span style={{ fontSize: '10px', color: 'var(--text-disabled)', fontWeight: 400, marginLeft: '8px' }}>
-              {newsItems.filter(n => n.severity === 'Major').length > 0 && <span style={{ color: 'var(--red-primary)' }}>{newsItems.filter(n => n.severity === 'Major').length} major </span>}
-              {newsItems.filter(n => n.type === 'Rumor').length > 0 && <span style={{ color: 'var(--text-accent)' }}>{newsItems.filter(n => n.type === 'Rumor').length} rumors</span>}
+              {newsItems.filter(n => n.severity === 'Major').length > 0 && <span style={{ color: 'var(--red-primary)' }}>{t('newsTab.major', { count: newsItems.filter(n => n.severity === 'Major').length })}</span>}
+              {newsItems.filter(n => n.type === 'Rumor').length > 0 && <span style={{ color: 'var(--text-accent)' }}>{t('newsTab.rumors', { count: newsItems.filter(n => n.type === 'Rumor').length })}</span>}
             </span>
           )}
         </h2>
@@ -58,20 +60,20 @@ export function NewsTab() {
               background: newsFilter === f ? (f === 'portfolio' ? 'var(--warning)' : 'var(--text-accent)') : 'var(--bg-tertiary)',
               color: newsFilter === f ? 'var(--text-primary)' : (f === 'portfolio' ? 'var(--warning)' : 'var(--text-secondary)'),
               opacity: f === 'portfolio' && heldSymbols.size === 0 ? 0.4 : 1,
-            }}>{f === 'all' ? 'All' : f === 'portfolio' ? 'My Portfolio' : f}</button>
+            }}>{f === 'all' ? t('newsTab.all') : f === 'portfolio' ? t('newsTab.myPortfolio') : f === 'Macro' ? t('newsTab.macro') : f === 'Sector' ? t('newsTab.sector') : f === 'Company' ? t('newsTab.company') : f === 'Rumor' ? t('newsTab.rumor') : f}</button>
           ))}
           <button onClick={() => setNewsFilter(newsFilter === 'bullish' ? 'all' : 'bullish')} style={{
             padding: '4px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer',
             fontSize: '11px', fontWeight: 600,
             background: newsFilter === 'bullish' ? 'var(--green-primary)' : 'var(--bg-tertiary)',
             color: newsFilter === 'bullish' ? 'var(--text-primary)' : 'var(--green-primary)',
-          }}>Bullish</button>
+          }}>{t('newsTab.bullish')}</button>
           <button onClick={() => setNewsFilter(newsFilter === 'bearish' ? 'all' : 'bearish')} style={{
             padding: '4px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer',
             fontSize: '11px', fontWeight: 600,
             background: newsFilter === 'bearish' ? 'var(--red-primary)' : 'var(--bg-tertiary)',
             color: newsFilter === 'bearish' ? 'var(--text-primary)' : 'var(--red-primary)',
-          }}>Bearish</button>
+          }}>{t('newsTab.bearish')}</button>
         </div>
       </div>
       {(() => {
@@ -152,7 +154,7 @@ export function NewsTab() {
                       ))}
                     </div>
                     <span className="mono" style={{ fontSize: '10px', color: 'var(--text-disabled)' }}>
-                      {item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : ''}
+                      {item.timestamp ? formatTime(item.timestamp) : ''}
                     </span>
                   </div>
                   <div style={{ fontSize: '13px', color, fontFamily: 'var(--font-ui)', lineHeight: 1.4 }}>
@@ -183,7 +185,7 @@ export function NewsTab() {
                       {item.detailedImpacts && item.detailedImpacts.length > 0 && (
                         <div style={{ marginBottom: '8px' }}>
                           <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-                            Affected Companies
+                            {t('newsTab.affectedCompanies')}
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                             {item.detailedImpacts.map((d) => (
@@ -216,7 +218,7 @@ export function NewsTab() {
                           padding: '6px 10px', background: 'color-mix(in srgb, var(--text-accent) 5%, transparent)', borderRadius: '4px',
                           border: '1px solid color-mix(in srgb, var(--text-accent) 10%, transparent)',
                         }}>
-                          <span style={{ fontWeight: 600, color: 'var(--text-accent)', fontSize: '10px' }}>HISTORICAL PARALLEL </span>
+                          <span style={{ fontWeight: 600, color: 'var(--text-accent)', fontSize: '10px' }}>{t('newsTab.historicalParallel')} </span>
                           {item.historicalParallel}
                         </div>
                       )}
@@ -224,7 +226,7 @@ export function NewsTab() {
                       {item.whatToWatch && item.whatToWatch.length > 0 && (
                         <div style={{ marginBottom: '8px' }}>
                           <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '3px' }}>
-                            What to Watch
+                            {t('newsTab.whatToWatch')}
                           </div>
                           <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                             {item.whatToWatch.map((w, i) => <li key={i}>{w}</li>)}
@@ -234,11 +236,11 @@ export function NewsTab() {
                       {/* Impact + Duration + Tier row */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                          <span>Impact: <span className="mono" style={{ color: item.priceEffect >= 0 ? 'var(--green-primary)' : 'var(--red-primary)', fontWeight: 700 }}>
+                          <span>{t('newsTab.impact')} <span className="mono" style={{ color: item.priceEffect >= 0 ? 'var(--green-primary)' : 'var(--red-primary)', fontWeight: 700 }}>
                             {item.priceEffect >= 0 ? '+' : ''}{(item.priceEffect * 100).toFixed(1)}%
                           </span></span>
                           {item.durationMinutes && (
-                            <span>Duration: <span className="mono" style={{ fontWeight: 600 }}>
+                            <span>{t('newsTab.duration')} <span className="mono" style={{ fontWeight: 600 }}>
                               {item.durationMinutes >= 60 ? `${(item.durationMinutes / 60).toFixed(1)}h` : `${item.durationMinutes}m`}
                             </span></span>
                           )}
@@ -250,7 +252,7 @@ export function NewsTab() {
                             }}>TIER {item.tier}</span>
                           )}
                           {item.affectedSectors.length > 0 && (
-                            <span>Sectors: {item.affectedSectors.join(', ')}</span>
+                            <span>{t('newsTab.sectors')} {item.affectedSectors.join(', ')}</span>
                           )}
                         </div>
                         {item.affectedSymbols[0] && (
@@ -258,7 +260,7 @@ export function NewsTab() {
                             padding: '4px 12px', borderRadius: '4px', border: 'none', cursor: 'pointer',
                             fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-ui)',
                             background: 'var(--text-accent)', color: 'var(--text-primary)',
-                          }}>Trade {item.affectedSymbols[0]}</button>
+                          }}>{t('newsTab.trade', { symbol: item.affectedSymbols[0] })}</button>
                         )}
                       </div>
                       {/* Tags */}
@@ -281,7 +283,7 @@ export function NewsTab() {
           </div>
         ) : (
           <div style={{ color: 'var(--text-disabled)', fontSize: '14px' }}>
-            {newsItems.length > 0 ? `No ${newsFilter} news.` : 'No news yet. Start the simulation to see market events.'}
+            {newsItems.length > 0 ? t('newsTab.noFilteredNews', { filter: newsFilter }) : t('newsTab.noNews')}
           </div>
         );
       })()}

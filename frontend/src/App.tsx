@@ -23,6 +23,7 @@ import type { DecisionPoint } from '@/data/decisionCases';
 import { TitleScreen } from '@/components/screens/TitleScreen';
 import { NewGameScreen, GameConfig } from '@/components/screens/NewGameScreen';
 import { SaveDialog, LoadScreen } from '@/components/screens/SaveLoadScreen';
+import { useI18n } from '@/i18n/I18nContext';
 import '@/styles/globals.css';
 
 const log = createLogger('App');
@@ -35,6 +36,7 @@ function getBackendPort(): number {
 const wsClient = new WebSocketClient(`ws://localhost:${getBackendPort()}`);
 
 function AccountBar() {
+  const { t, formatMoney } = useI18n();
   const portfolio = useMarketStore((s) => s.portfolio);
   const stockList = useMarketStore((s) => s.stockList);
   if (!portfolio) return null;
@@ -55,34 +57,34 @@ function AccountBar() {
       fontSize: '11px', fontFamily: 'var(--font-mono)', flexShrink: 0,
     }}>
       <span>
-        <span style={{ color: 'var(--text-disabled)' }}>Equity </span>
-        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>${portfolio.totalEquity.toFixed(0)}</span>
+        <span style={{ color: 'var(--text-disabled)' }}>{t('app.equity')} </span>
+        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(portfolio.totalEquity, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
       </span>
       <span>
-        <span style={{ color: 'var(--text-disabled)' }}>Cash </span>
-        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>${portfolio.cash.toFixed(0)}</span>
+        <span style={{ color: 'var(--text-disabled)' }}>{t('app.cash')} </span>
+        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(portfolio.cash, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
       </span>
       <span>
-        <span style={{ color: 'var(--text-disabled)' }}>Return </span>
+        <span style={{ color: 'var(--text-disabled)' }}>{t('app.return')} </span>
         <span style={{ color: totalReturnPct >= 0 ? 'var(--green-primary)' : 'var(--red-primary)', fontWeight: 600 }}>
           {totalReturnPct >= 0 ? '+' : ''}{totalReturnPct.toFixed(1)}%
           <span style={{ opacity: 0.7, marginLeft: '2px' }}>
-            (${(portfolio.totalEquity - startingCash) >= 0 ? '+' : ''}{(portfolio.totalEquity - startingCash).toFixed(0)})
+            ({(portfolio.totalEquity - startingCash) >= 0 ? '+' : ''}{(portfolio.totalEquity - startingCash).toFixed(0)})
           </span>
         </span>
       </span>
       <span>
-        <span style={{ color: 'var(--text-disabled)' }}>Realized </span>
+        <span style={{ color: 'var(--text-disabled)' }}>{t('app.realized')} </span>
         <span style={{ color: portfolio.realizedPnL >= 0 ? 'var(--green-primary)' : 'var(--red-primary)', fontWeight: 600 }}>
-          {portfolio.realizedPnL >= 0 ? '+' : ''}${portfolio.realizedPnL.toFixed(0)}
+          {portfolio.realizedPnL >= 0 ? '+' : ''}{formatMoney(portfolio.realizedPnL, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </span>
       </span>
       <span>
-        <span style={{ color: 'var(--text-disabled)' }}>Positions </span>
+        <span style={{ color: 'var(--text-disabled)' }}>{t('app.positions')} </span>
         <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{positions}</span>
       </span>
       <span>
-        <span style={{ color: 'var(--text-disabled)' }}>Trades </span>
+        <span style={{ color: 'var(--text-disabled)' }}>{t('app.trades')} </span>
         <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{portfolio.tradeCount}</span>
       </span>
       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -99,8 +101,8 @@ function AccountBar() {
         const gt = useMarketStore.getState().gameTime;
         if (!gt) return null;
         const m = new Date(gt).getMonth();
-        const seasonal = m === 0 ? 'Jan Effect' : m >= 4 && m <= 9 ? 'Sell in May' :
-          m === 9 ? 'Oct Vol' : m >= 10 ? 'Holiday Rally' : null;
+        const seasonal = m === 0 ? t('app.janEffect') : m >= 4 && m <= 9 ? t('app.sellInMay') :
+          m === 9 ? t('app.octVol') : m >= 10 ? t('app.holidayRally') : null;
         if (!seasonal) return null;
         return (
           <span style={{ fontSize: '9px', color: 'var(--warning)', fontWeight: 600, opacity: 0.7 }}>
@@ -109,13 +111,14 @@ function AccountBar() {
         );
       })()}
       <span style={{ color: 'var(--text-disabled)', fontSize: '10px', opacity: 0.5 }}>
-        Ctrl+K Search | Space Pause | Esc Menu
+        {t('app.hint')}
       </span>
     </div>
   );
 }
 
 export function App() {
+  const { t, formatMoney } = useI18n();
   const selectStock = useMarketStore((s) => s.selectStock);
   const setStocks = useMarketStore((s) => s.setStocks);
   const updatePrices = useMarketStore((s) => s.updatePrices);
@@ -668,7 +671,7 @@ export function App() {
         <p style={{
           color: 'var(--text-disabled)', fontSize: '13px', margin: 0,
           letterSpacing: '1px',
-        }}>Connecting to market...</p>
+        }}>{t('app.connecting')}</p>
         <style>{`
           @keyframes splashLoadingBar {
             0% { transform: translateX(-200%); }
@@ -696,18 +699,18 @@ export function App() {
           borderRadius: '8px', padding: '24px 32px', maxWidth: '480px', textAlign: 'center',
         }}>
           <p style={{ color: 'var(--red-primary)', fontSize: '16px', fontWeight: 600, margin: '0 0 12px' }}>
-            Connection Failed
+            {t('app.connectionFailed')}
           </p>
           <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.6', margin: '0 0 16px' }}>
-            Could not connect to the game engine. This usually means:
+            {t('app.couldNotConnect')}
           </p>
           <ul style={{
             color: 'var(--text-muted)', fontSize: '13px', lineHeight: '1.8',
             textAlign: 'left', margin: '0 0 20px', paddingLeft: '20px',
           }}>
-            <li>Windows Firewall is blocking the connection</li>
-            <li>Antivirus software is blocking StockSim.Engine.exe</li>
-            <li>The game engine crashed on startup</li>
+            <li>{t('app.firewallBlocked')}</li>
+            <li>{t('app.antivirusBlocked')}</li>
+            <li>{t('app.engineCrashed')}</li>
           </ul>
           <button
             onClick={() => { setScreenInstant('connecting'); wsClient.connect(); }}
@@ -717,7 +720,7 @@ export function App() {
               fontWeight: 600, cursor: 'pointer',
             }}
           >
-            Retry Connection
+            {t('app.retry')}
           </button>
         </div>
       </div>
@@ -805,33 +808,33 @@ export function App() {
       {tenderOffer && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5000 }}>
           <div style={{ width: '440px', background: 'var(--bg-secondary)', border: '2px solid var(--warning)', borderRadius: '10px', padding: '24px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--warning)', letterSpacing: '1.5px', marginBottom: '12px' }}>TENDER OFFER</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--warning)', letterSpacing: '1.5px', marginBottom: '12px' }}>{t('app.tenderOffer')}</div>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 16px' }}>
               <strong style={{ color: 'var(--text-primary)' }}>{tenderOffer.acquirerName}</strong> is offering{' '}
-              <strong className="mono" style={{ color: 'var(--green-primary)' }}>${tenderOffer.offerPrice.toFixed(2)}</strong> per share
+              <strong className="mono" style={{ color: 'var(--green-primary)' }}>{formatMoney(tenderOffer.offerPrice, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> per share
               for your <strong style={{ color: 'var(--text-primary)' }}>{tenderOffer.targetName}</strong> holdings.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', fontSize: '13px' }}>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '8px 12px' }}>
-                <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>Current Price</div>
-                <div className="mono" style={{ color: 'var(--text-primary)', fontWeight: 700 }}>${tenderOffer.currentPrice.toFixed(2)}</div>
+                <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>{t('app.currentPrice')}</div>
+                <div className="mono" style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{formatMoney(tenderOffer.currentPrice, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               </div>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '8px 12px' }}>
-                <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>Offer Price</div>
-                <div className="mono" style={{ color: 'var(--green-primary)', fontWeight: 700 }}>${tenderOffer.offerPrice.toFixed(2)}</div>
+                <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>{t('app.offerPrice')}</div>
+                <div className="mono" style={{ color: 'var(--green-primary)', fontWeight: 700 }}>{formatMoney(tenderOffer.offerPrice, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               </div>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '8px 12px' }}>
-                <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>Premium</div>
+                <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>{t('app.premium')}</div>
                 <div className="mono" style={{ color: 'var(--green-primary)', fontWeight: 700 }}>+{tenderOffer.premiumPercent}%</div>
               </div>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '8px 12px' }}>
-                <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>Your Shares</div>
+                <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>{t('app.yourShares')}</div>
                 <div className="mono" style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{tenderOffer.playerShares}</div>
               </div>
             </div>
             <div style={{ background: 'color-mix(in srgb, var(--green-primary) 10%, transparent)', borderRadius: '6px', padding: '10px 14px', marginBottom: '16px', textAlign: 'center' }}>
-              <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>Total Payout</div>
-              <div className="mono" style={{ color: 'var(--green-primary)', fontSize: '20px', fontWeight: 700 }}>${tenderOffer.totalPayout.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div style={{ color: 'var(--text-disabled)', fontSize: '10px' }}>{t('app.totalPayout')}</div>
+              <div className="mono" style={{ color: 'var(--green-primary)', fontSize: '20px', fontWeight: 700 }}>{formatMoney(tenderOffer.totalPayout, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
@@ -841,11 +844,11 @@ export function App() {
                   setTenderOffer(null);
                 }}
                 style={{ flex: 1, padding: '10px', borderRadius: '6px', background: 'var(--green-primary)', color: 'var(--text-primary)', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px', fontFamily: 'var(--font-ui)' }}
-              >Accept Offer</button>
+              >{t('app.acceptOffer')}</button>
               <button
                 onClick={() => setTenderOffer(null)}
                 style={{ flex: 1, padding: '10px', borderRadius: '6px', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600, fontSize: '14px', fontFamily: 'var(--font-ui)' }}
-              >Decline / Hold</button>
+              >{t('app.declineHold')}</button>
             </div>
           </div>
         </div>
@@ -856,10 +859,10 @@ export function App() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5500 }}>
           <div style={{ width: '440px', background: 'var(--bg-secondary)', border: '2px solid var(--chart-purple)', borderRadius: '10px', padding: '24px' }}>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <span style={{ fontSize: '10px', color: 'var(--chart-purple)', letterSpacing: '2px', fontWeight: 700 }}>SHAREHOLDER VOTE</span>
+              <span style={{ fontSize: '10px', color: 'var(--chart-purple)', letterSpacing: '2px', fontWeight: 700 }}>{t('app.shareholderVote')}</span>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0' }}>{shareholderVote.companyName}</h3>
               <span className="mono" style={{ fontSize: '12px', color: 'var(--text-disabled)' }}>
-                You own {shareholderVote.ownershipPercent.toFixed(1)}% of outstanding shares
+                {t('app.youOwn', { pct: shareholderVote.ownershipPercent.toFixed(1) })}
               </span>
             </div>
             <div style={{
@@ -875,18 +878,18 @@ export function App() {
               }} style={{
                 flex: 1, padding: '10px', borderRadius: '6px', background: 'var(--green-primary)',
                 color: 'var(--text-primary)', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px',
-              }}>Vote YES</button>
+              }}>{t('app.voteYes')}</button>
               <button onClick={() => {
                 wsClient.send('ShareholderVoteResponse', { symbol: shareholderVote.symbol, voteType: shareholderVote.voteType, approved: false });
                 setShareholderVote(null);
               }} style={{
                 flex: 1, padding: '10px', borderRadius: '6px', background: 'var(--red-primary)',
                 color: 'var(--text-primary)', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px',
-              }}>Vote NO</button>
+              }}>{t('app.voteNo')}</button>
               <button onClick={() => setShareholderVote(null)} style={{
                 padding: '10px 16px', borderRadius: '6px', background: 'var(--bg-tertiary)',
                 color: 'var(--text-secondary)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '13px',
-              }}>Abstain</button>
+              }}>{t('app.abstain')}</button>
             </div>
           </div>
         </div>
@@ -899,26 +902,26 @@ export function App() {
           <div style={{ width: '500px', maxHeight: '80vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '10px', padding: '24px' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <div style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '2px' }}>END OF DAY REPORT</div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0' }}>Market Closed</h3>
+              <div style={{ fontSize: '10px', color: 'var(--text-disabled)', letterSpacing: '2px' }}>{t('app.endOfDay')}</div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '4px 0' }}>{t('app.marketClosed')}</h3>
               <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{String(daySummary.date)}</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '12px' }}>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '10px', textAlign: 'center' }}>
-                <span style={{ fontSize: '9px', color: 'var(--text-disabled)', display: 'block' }}>MARKET</span>
+                <span style={{ fontSize: '9px', color: 'var(--text-disabled)', display: 'block' }}>{t('app.market')}</span>
                 <span className="mono" style={{ fontSize: '18px', fontWeight: 700, color: Number(daySummary.marketChange) >= 0 ? 'var(--green-primary)' : 'var(--red-primary)' }}>
                   {Number(daySummary.marketChange) >= 0 ? '+' : ''}{Number(daySummary.marketChange).toFixed(2)}%
                 </span>
               </div>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '10px', textAlign: 'center' }}>
-                <span style={{ fontSize: '9px', color: 'var(--text-disabled)', display: 'block' }}>PORTFOLIO</span>
+                <span style={{ fontSize: '9px', color: 'var(--text-disabled)', display: 'block' }}>{t('app.portfolio')}</span>
                 <span className="mono" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  ${Number(daySummary.portfolioValue).toFixed(0)}
+                  {formatMoney(Number(daySummary.portfolioValue), { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
               </div>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '10px', textAlign: 'center' }}>
-                <span style={{ fontSize: '9px', color: 'var(--text-disabled)', display: 'block' }}>BREADTH</span>
+                <span style={{ fontSize: '9px', color: 'var(--text-disabled)', display: 'block' }}>{t('app.breadth')}</span>
                 <span className="mono" style={{ fontSize: '14px' }}>
                   <span style={{ color: 'var(--green-primary)' }}>{Number(daySummary.advancing || 0)}</span>
                   {' / '}
@@ -929,13 +932,13 @@ export function App() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '8px 12px' }}>
-                <span style={{ fontSize: '9px', color: 'var(--text-disabled)' }}>TOP GAINER</span>
+                <span style={{ fontSize: '9px', color: 'var(--text-disabled)' }}>{t('app.topGainer')}</span>
                 <div className="mono" style={{ color: 'var(--green-primary)', fontSize: '13px', fontWeight: 700 }}>
                   {String((daySummary.topGainer as Record<string, unknown>)?.symbol)} +{Number((daySummary.topGainer as Record<string, unknown>)?.change).toFixed(2)}%
                 </div>
               </div>
               <div style={{ background: 'var(--bg-tertiary)', borderRadius: '6px', padding: '8px 12px' }}>
-                <span style={{ fontSize: '9px', color: 'var(--text-disabled)' }}>TOP LOSER</span>
+                <span style={{ fontSize: '9px', color: 'var(--text-disabled)' }}>{t('app.topLoser')}</span>
                 <div className="mono" style={{ color: 'var(--red-primary)', fontSize: '13px', fontWeight: 700 }}>
                   {String((daySummary.topLoser as Record<string, unknown>)?.symbol)} {Number((daySummary.topLoser as Record<string, unknown>)?.change).toFixed(2)}%
                 </div>
@@ -945,7 +948,7 @@ export function App() {
             {/* Sector Performance */}
             {Array.isArray(daySummary.sectorPerformance) && (daySummary.sectorPerformance as Array<Record<string, unknown>>).length > 0 && (
               <div style={{ marginBottom: '12px' }}>
-                <span style={{ fontSize: '9px', color: 'var(--text-disabled)', letterSpacing: '1px' }}>SECTOR PERFORMANCE</span>
+                <span style={{ fontSize: '9px', color: 'var(--text-disabled)', letterSpacing: '1px' }}>{t('app.sectorPerformance')}</span>
                 <div style={{ display: 'flex', gap: '4px', marginTop: '4px', flexWrap: 'wrap' }}>
                   {(daySummary.sectorPerformance as Array<Record<string, unknown>>).map((sp: Record<string, unknown>) => (
                     <span key={String(sp.sector)} className="mono" style={{
@@ -961,7 +964,7 @@ export function App() {
             <button onClick={() => setDaySummary(null)} style={{
               width: '100%', padding: '10px', borderRadius: '6px', background: 'var(--text-accent)',
               color: 'var(--text-primary)', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px', marginTop: '8px',
-            }}>Continue Trading</button>
+            }}>{t('app.continueTrading')}</button>
           </div>
         </div>
       )}
@@ -983,27 +986,27 @@ export function App() {
             boxShadow: '0 0 60px color-mix(in srgb, var(--gold-primary) 15%, transparent)',
           }}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--gold-primary)', letterSpacing: '4px', fontWeight: 600 }}>CAREER COMPLETE</div>
-              <h2 style={{ fontSize: '32px', fontWeight: 900, color: 'var(--gold-light)', margin: '8px 0', letterSpacing: '2px' }}>RETIRED</h2>
+              <div style={{ fontSize: '12px', color: 'var(--gold-primary)', letterSpacing: '4px', fontWeight: 600 }}>{t('app.careerComplete')}</div>
+              <h2 style={{ fontSize: '32px', fontWeight: 900, color: 'var(--gold-light)', margin: '8px 0', letterSpacing: '2px' }}>{t('app.retired')}</h2>
               <div className="mono" style={{ fontSize: '28px', fontWeight: 700, color: Number(careerSummary.totalReturnPercent) >= 0 ? 'var(--green-primary)' : 'var(--red-primary)' }}>
-                ${Number(careerSummary.finalEquity).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                {formatMoney(Number(careerSummary.finalEquity), { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </div>
               <div className="mono" style={{ fontSize: '14px', color: Number(careerSummary.totalReturnPercent) >= 0 ? 'var(--green-primary)' : 'var(--red-primary)' }}>
-                {Number(careerSummary.totalReturnPercent) >= 0 ? '+' : ''}{Number(careerSummary.totalReturnPercent).toFixed(1)}% Total Return
+                {Number(careerSummary.totalReturnPercent) >= 0 ? '+' : ''}{Number(careerSummary.totalReturnPercent).toFixed(1)}% {t('app.return')}
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
               {[
-                ['Days Traded', careerSummary.daysPlayed],
-                ['Total Trades', careerSummary.totalTrades],
-                ['Win Rate', `${Number(careerSummary.winRate).toFixed(1)}%`],
-                ['Best Trade', `+$${Number(careerSummary.bestTradePnL).toFixed(0)} (${careerSummary.bestTradeSymbol})`],
-                ['Worst Trade', `-$${Number(careerSummary.worstTradePnL).toFixed(0)} (${careerSummary.worstTradeSymbol})`],
-                ['Max Drawdown', `-${Number(careerSummary.maxDrawdown).toFixed(1)}%`],
-                ['Commissions', `$${Number(careerSummary.totalCommissions).toFixed(0)}`],
-                ['Tax Paid', `$${Number(careerSummary.totalTaxPaid).toFixed(0)}`],
-                ['Achievements', `${careerSummary.achievementsUnlocked}/${careerSummary.achievementsTotal}`],
+                [t('app.daysTraded'), careerSummary.daysPlayed],
+                [t('app.totalTrades'), careerSummary.totalTrades],
+                [t('app.winRate'), `${Number(careerSummary.winRate).toFixed(1)}%`],
+                [t('app.bestTrade'), `+$${Number(careerSummary.bestTradePnL).toFixed(0)} (${careerSummary.bestTradeSymbol})`],
+                [t('app.worstTrade'), `-$${Number(careerSummary.worstTradePnL).toFixed(0)} (${careerSummary.worstTradeSymbol})`],
+                [t('app.maxDrawdown'), `-${Number(careerSummary.maxDrawdown).toFixed(1)}%`],
+                [t('app.commissions'), `$${Number(careerSummary.totalCommissions).toFixed(0)}`],
+                [t('app.taxPaid'), `$${Number(careerSummary.totalTaxPaid).toFixed(0)}`],
+                [t('app.achievements'), `${careerSummary.achievementsUnlocked}/${careerSummary.achievementsTotal}`],
               ].map(([label, value]) => (
                 <div key={String(label)} style={{
                   background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '10px',
@@ -1020,11 +1023,11 @@ export function App() {
                 padding: '10px 32px', borderRadius: '6px', fontSize: '14px', fontWeight: 700,
                 background: 'linear-gradient(135deg, var(--gold-primary), var(--gold-dark))', color: 'var(--text-primary)',
                 border: 'none', cursor: 'pointer',
-              }}>New Game</button>
+              }}>{t('title.newGame')}</button>
               <button onClick={() => setCareerSummary(null)} style={{
                 padding: '10px 24px', borderRadius: '6px', background: 'var(--bg-tertiary)',
                 color: 'var(--text-primary)', border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600,
-              }}>Continue Playing</button>
+              }}>{t('title.continue')}</button>
             </div>
           </div>
         </div>

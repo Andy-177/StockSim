@@ -5,30 +5,33 @@ import { WebSocketClient } from '@/services/websocket';
 import { Pause, Play, FastForward, Save, Settings, SkipForward, Search, Shield, BookOpen, Menu, Bell } from 'lucide-react';
 import { getCareerTitle } from '@/data/careerTitles';
 import { audio } from '@/services/audio';
+import { useI18n } from '@/i18n/I18nContext';
 
-const TAB_GROUPS: { tabs: { id: ActiveTab; label: string; shortcut: string }[] }[] = [
+const TAB_GROUPS: { tabs: { id: ActiveTab; shortcut: string }[] }[] = [
   { tabs: [
-    { id: 'dashboard', label: 'Dashboard', shortcut: 'D' },
-    { id: 'portfolio', label: 'Portfolio', shortcut: 'P' },
-    { id: 'market', label: 'Market', shortcut: 'M' },
+    { id: 'dashboard', shortcut: 'D' },
+    { id: 'portfolio', shortcut: 'P' },
+    { id: 'market', shortcut: 'M' },
   ]},
   { tabs: [
-    { id: 'orders', label: 'Orders', shortcut: 'O' },
-    { id: 'options', label: 'Options', shortcut: 'X' },
+    { id: 'orders', shortcut: 'O' },
+    { id: 'options', shortcut: 'X' },
   ]},
   { tabs: [
-    { id: 'news', label: 'News', shortcut: 'N' },
-    { id: 'analytics', label: 'Analytics', shortcut: 'A' },
-    { id: 'journal', label: 'Journal', shortcut: 'J' },
+    { id: 'news', shortcut: 'N' },
+    { id: 'analytics', shortcut: 'A' },
+    { id: 'journal', shortcut: 'J' },
   ]},
 ];
 
+const SPEED_TITLES = ['topbar.pause', 'topbar.realTime', 'topbar.fast', 'topbar.veryFast', 'topbar.maximum'] as const;
+
 const SPEEDS = [
-  { speed: GameSpeed.Paused, icon: Pause, label: '▐▐', title: 'Pause' },
-  { speed: GameSpeed.Normal, icon: Play, label: '▶', title: 'Real-Time' },
-  { speed: GameSpeed.Fast, icon: FastForward, label: '▶▶', title: 'Fast' },
-  { speed: GameSpeed.VeryFast, icon: FastForward, label: '▶▶▶', title: 'Very Fast' },
-  { speed: GameSpeed.Maximum, icon: FastForward, label: 'MAX', title: 'Maximum' },
+  { speed: GameSpeed.Paused, icon: Pause, label: '▐▐' },
+  { speed: GameSpeed.Normal, icon: Play, label: '▶' },
+  { speed: GameSpeed.Fast, icon: FastForward, label: '▶▶' },
+  { speed: GameSpeed.VeryFast, icon: FastForward, label: '▶▶▶' },
+  { speed: GameSpeed.Maximum, icon: FastForward, label: 'MAX' },
 ];
 
 interface TopBarProps {
@@ -41,8 +44,12 @@ interface TopBarProps {
 }
 
 function CareerBadge({ equity, trades }: { equity: number; trades: number }) {
+  const { t } = useI18n();
   const approxDays = Math.max(trades, 1);
   const career = useMemo(() => getCareerTitle(equity, trades, approxDays), [equity, trades, approxDays]);
+  const careerKey = career.id === 'fund_manager' ? 'fundManager' : career.id;
+  const translatedTitle = t(`career.${careerKey}`);
+  const displayTitle = translatedTitle !== `career.${careerKey}` ? translatedTitle : career.title;
   const [prevId, setPrevId] = useState(career.id);
   const [promoted, setPromoted] = useState(false);
 
@@ -66,12 +73,13 @@ function CareerBadge({ equity, trades }: { equity: number; trades: number }) {
         transition: 'all 0.5s ease',
       }}
     >
-      {career.icon} {career.title}
+      {career.icon} {displayTitle}
     </span>
   );
 }
 
 export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki, onMainMenu, onSave }: TopBarProps) {
+  const { t, formatGameTime, formatMoney, formatTime } = useI18n();
   const activeTab = useMarketStore((s) => s.activeTab);
   const setActiveTab = useMarketStore((s) => s.setActiveTab);
   const speed = useMarketStore((s) => s.speed);
@@ -172,19 +180,6 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
     }
   }, [saveError]);
 
-  const formatGameTime = (iso: string): string => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const h = d.getHours();
-    const m = d.getMinutes().toString().padStart(2, '0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()} ${d.getFullYear()} — ${h12}:${m} ${ampm}`;
-  };
-
   return (
     <header style={styles.topBar}>
       {/* Logo + Navigation */}
@@ -203,9 +198,9 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
                     ...(activeTab === tab.id ? styles.tabActive : {}),
                   }}
                   onClick={() => setActiveTab(tab.id)}
-                  title={`${tab.label} (${tab.shortcut})`}
+                  title={`${t(`nav.${tab.id}`)} (${tab.shortcut})`}
                 >
-                  {tab.label}
+                  {t(`nav.${tab.id}`)}
                 </button>
               ))}
             </div>
@@ -226,28 +221,33 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
             const day = d.getDay();
             const isWeekend = day === 0 || day === 6;
 
-            let label = 'CLOSED';
+            let label = t('topbar.closed');
             let color = 'var(--red-primary)';
             let glow = 'none';
             let countdown = '';
+            let phase: 'closed' | 'weekend' | 'live' | 'pre' | 'after' = 'closed';
 
             if (isWeekend) {
-              label = 'WEEKEND';
+              label = t('topbar.weekend');
+              phase = 'weekend';
             } else if (isMarketOpen) {
-              label = 'LIVE';
+              label = t('topbar.live');
+              phase = 'live';
               color = 'var(--green-primary)';
               glow = '0 0 8px var(--green-glow)';
               const closeMin = 16 * 60;
               const remaining = closeMin - totalMin;
-              if (remaining > 0 && remaining <= 60) countdown = `${remaining}m to close`;
+              if (remaining > 0 && remaining <= 60) countdown = t('topbar.toClose', { mins: remaining });
             } else if (totalMin >= 7 * 60 && totalMin < 9 * 60 + 30) {
-              label = 'PRE-MARKET';
+              label = t('topbar.preMarket');
+              phase = 'pre';
               color = 'var(--warning)';
               const openMin = 9 * 60 + 30;
               const remaining = openMin - totalMin;
-              countdown = `${Math.floor(remaining / 60)}h ${remaining % 60}m to open`;
+              countdown = t('topbar.toOpenHours', { hours: Math.floor(remaining / 60), mins: remaining % 60 });
             } else if (totalMin >= 16 * 60 && totalMin < 20 * 60) {
-              label = 'AFTER-HOURS';
+              label = t('topbar.afterHours');
+              phase = 'after';
               color = 'var(--chart-purple)';
             }
 
@@ -263,11 +263,11 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
               ...(isMarketOpen ? {
                 background: 'color-mix(in srgb, var(--green-primary) 12%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--green-primary) 30%, transparent)',
-              } : label === 'PRE-MARKET' ? {
+              } : phase === 'pre' ? {
                 background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--warning) 30%, transparent)',
                 animation: 'pulse 2s ease-in-out infinite',
-              } : label === 'AFTER-HOURS' ? {
+              } : phase === 'after' ? {
                 background: 'color-mix(in srgb, var(--chart-purple) 12%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--chart-purple) 30%, transparent)',
               } : {
@@ -290,7 +290,7 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
         </div>
 
         <div style={styles.speedGroup}>
-          {SPEEDS.map((s) => (
+          {SPEEDS.map((s, idx) => (
             <button
               key={s.speed}
               style={{
@@ -298,7 +298,7 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
                 ...(speed === s.speed ? styles.speedBtnActive : {}),
               }}
               onClick={() => handleSpeedChange(s.speed)}
-              title={s.title}
+              title={t(SPEED_TITLES[idx])}
             >
               {s.label}
             </button>
@@ -351,13 +351,13 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', borderRadius: '6px', padding: '2px 6px' }}
             >
               <span className="mono" style={styles.cashDisplay}>
-                ${portfolio.totalEquity.toFixed(0)}
+                {formatMoney(portfolio.totalEquity, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
               <span className="mono" style={{
                 fontSize: '10px', fontWeight: 600,
                 color: 'var(--text-muted)',
               }}>
-                Cash: ${portfolio.cash.toFixed(0)}
+                {t('topbar.cash')}: {formatMoney(portfolio.cash, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
             </div>
           </div>
@@ -368,10 +368,10 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
           <button
             style={{ ...styles.iconBtn, color: 'var(--warning)' }}
             onClick={() => wsClient.send('SkipToOpen', {})}
-            title="Skip to Market Open"
+            title={t('topbar.skipToOpen')}
           >
             <SkipForward size={16} />
-            <span style={{ fontSize: '10px', marginLeft: '2px', fontWeight: 600 }}>OPEN</span>
+            <span style={{ fontSize: '10px', marginLeft: '2px', fontWeight: 600 }}>{t('topbar.open')}</span>
           </button>
         )}
 
@@ -388,8 +388,8 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
               wsClient.send('GetSMAStatus', {});
               setShowSMAPanel(!showSMAPanel);
             }}
-            title={`Regulatory Status: ${smaStatusLabel(smaStatus)}`}
-            aria-label={`Regulatory Status: ${smaStatusLabel(smaStatus)}`}
+            title={`${t('topbar.regulatoryStatus')}: ${smaStatusLabel(smaStatus, t)}`}
+            aria-label={`${t('topbar.regulatoryStatus')}: ${smaStatusLabel(smaStatus, t)}`}
           >
             <Shield size={16} />
           </button>
@@ -403,13 +403,13 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
         </div>
 
         {saveError && (
-          <span className="mono" style={{ fontSize: '11px', color: 'var(--red-primary)', fontWeight: 600 }}>Save failed!</span>
+          <span className="mono" style={{ fontSize: '11px', color: 'var(--red-primary)', fontWeight: 600 }}>{t('topbar.saveFailed')}</span>
         )}
         {!saveError && saveFlash && (
-          <span className="mono" style={{ fontSize: '11px', color: 'var(--green-primary)', fontWeight: 600 }}>Saved!</span>
+          <span className="mono" style={{ fontSize: '11px', color: 'var(--green-primary)', fontWeight: 600 }}>{t('topbar.saved')}</span>
         )}
         {!saveError && !saveFlash && autosaveFlash && (
-          <span className="mono" style={{ fontSize: '11px', color: 'var(--green-primary)', fontWeight: 600, opacity: 0.8 }}>Autosaved</span>
+          <span className="mono" style={{ fontSize: '11px', color: 'var(--green-primary)', fontWeight: 600, opacity: 0.8 }}>{t('topbar.autosaved')}</span>
         )}
 
         {/* Notification Center */}
@@ -417,7 +417,7 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
           <button
             style={{ ...styles.iconBtn, color: showNotifPanel ? 'var(--text-accent)' : 'var(--text-secondary)' }}
             onClick={() => setShowNotifPanel(!showNotifPanel)}
-            title="Notifications"
+            title={t('topbar.notifications')}
           >
             <Bell size={16} />
             {newsItems.filter(n => n.severity === 'Major' || n.tier && n.tier >= 3).length > 0 && (
@@ -437,7 +437,7 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
               zIndex: 1001,
             }}>
               <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>Notifications</span>
+                <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>{t('topbar.notifications')}</span>
                 <button onClick={() => setShowNotifPanel(false)} style={{ background: 'none', border: 'none', color: 'var(--text-disabled)', cursor: 'pointer', fontSize: '16px' }}>×</button>
               </div>
               {newsItems.filter(n => n.severity === 'Major' || (n.tier && n.tier >= 2)).slice(0, 15).map(n => (
@@ -453,7 +453,7 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
                     }}>{n.tier && n.tier >= 4 ? 'BLACK SWAN' : n.tier && n.tier >= 3 ? 'CRISIS' : n.severity}</span>
                     {n.affectedSymbols[0] && <span className="mono" style={{ fontWeight: 700, color: 'var(--text-accent)', fontSize: '10px' }}>{n.affectedSymbols[0]}</span>}
                     <span className="mono" style={{ color: 'var(--text-disabled)', fontSize: '9px', marginLeft: 'auto' }}>
-                      {n.timestamp ? new Date(n.timestamp).toLocaleTimeString() : ''}
+                      {n.timestamp ? formatTime(n.timestamp) : ''}
                     </span>
                   </div>
                   <div style={{
@@ -464,22 +464,22 @@ export function TopBar({ wsClient, onOpenSettings, onOpenCommandBar, onOpenWiki,
               ))}
               {newsItems.filter(n => n.severity === 'Major' || (n.tier && n.tier >= 2)).length === 0 && (
                 <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-disabled)', fontSize: '12px' }}>
-                  No significant events yet
+                  {t('topbar.noSignificantEvents')}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        <button style={styles.iconBtn} title="Search (Ctrl+K)" aria-label="Open search" onClick={onOpenCommandBar}>
+        <button style={styles.iconBtn} title={t('topbar.searchTitle')} aria-label={t('topbar.openSearch')} onClick={onOpenCommandBar}>
           <Search size={16} />
         </button>
 
         <button
           style={{ ...styles.menuBtn, ...(showGameMenu ? { background: 'var(--bg-tertiary)', color: 'var(--text-accent)' } : {}) }}
           onClick={() => setShowGameMenu(!showGameMenu)}
-          title="Menu (Esc)"
-          aria-label="Open game menu"
+          title={t('topbar.menu')}
+          aria-label={t('topbar.openMenu')}
         >
           <Menu size={20} />
         </button>
@@ -513,13 +513,16 @@ function smaShieldColor(status: RegulatoryStatus): string {
   }
 }
 
-function smaStatusLabel(status: RegulatoryStatus): string {
+function smaStatusLabel(
+  status: RegulatoryStatus,
+  t: (key: string) => string,
+): string {
   switch (status) {
-    case 'Clear': return 'Clear';
-    case 'UnderReview': return 'Under Review';
-    case 'UnderInvestigation': return 'Under Investigation';
-    case 'EnforcementPending': return 'Enforcement Action Pending';
-    default: return 'Clear';
+    case 'Clear': return t('topbar.statusClear');
+    case 'UnderReview': return t('topbar.statusUnderReview');
+    case 'UnderInvestigation': return t('topbar.statusUnderInvestigation');
+    case 'EnforcementPending': return t('topbar.statusEnforcementPending');
+    default: return t('topbar.statusClear');
   }
 }
 
@@ -528,21 +531,22 @@ function SMAPanel({ smaData, smaStatus, onClose }: {
   smaStatus: RegulatoryStatus;
   onClose: () => void;
 }) {
+  const { t, formatDate, formatMoney } = useI18n();
   return (
     <div style={smaPanelStyles.overlay} onClick={onClose}>
       <div style={smaPanelStyles.panel} onClick={(e) => e.stopPropagation()}>
         <div style={smaPanelStyles.header}>
           <Shield size={18} style={{ color: smaShieldColor(smaStatus) }} />
-          <span style={smaPanelStyles.title}>SMA Regulatory Status</span>
-          <button style={smaPanelStyles.closeBtn} onClick={onClose} aria-label="Close regulatory status panel">×</button>
+          <span style={smaPanelStyles.title}>{t('topbar.smaTitle')}</span>
+          <button style={smaPanelStyles.closeBtn} onClick={onClose} aria-label={t('topbar.closePanel')}>×</button>
         </div>
 
         <div style={smaPanelStyles.statusBar}>
           <span style={{ color: smaShieldColor(smaStatus), fontWeight: 600 }}>
-            {smaStatusLabel(smaStatus)}
+            {smaStatusLabel(smaStatus, t)}
           </span>
           {smaData?.accountFrozen && (
-            <span style={{ color: 'var(--red-primary)', fontWeight: 700 }}>ACCOUNT FROZEN</span>
+            <span style={{ color: 'var(--red-primary)', fontWeight: 700 }}>{t('topbar.accountFrozen')}</span>
           )}
         </div>
 
@@ -551,13 +555,13 @@ function SMAPanel({ smaData, smaStatus, onClose }: {
             {/* Active Investigations */}
             {smaData.investigations.length > 0 && (
               <div style={smaPanelStyles.section}>
-                <div style={smaPanelStyles.sectionTitle}>Active Investigations</div>
+                <div style={smaPanelStyles.sectionTitle}>{t('topbar.activeInvestigations')}</div>
                 {smaData.investigations.map((inv) => (
                   <div key={inv.id} style={smaPanelStyles.item}>
                     <span style={{ color: 'var(--warning)' }}>⚠</span>
                     <span>{inv.type.replace(/([A-Z])/g, ' $1').trim()} in {inv.symbol}</span>
                     <span className="mono" style={{ color: 'var(--text-disabled)', fontSize: '11px' }}>
-                      {inv.daysRemaining}d remaining
+                      {t('topbar.daysRemaining', { days: inv.daysRemaining })}
                     </span>
                   </div>
                 ))}
@@ -567,13 +571,13 @@ function SMAPanel({ smaData, smaStatus, onClose }: {
             {/* Trading Restrictions */}
             {smaData.tradingRestrictions.length > 0 && (
               <div style={smaPanelStyles.section}>
-                <div style={smaPanelStyles.sectionTitle}>Trading Restrictions</div>
+                <div style={smaPanelStyles.sectionTitle}>{t('topbar.tradingRestrictions')}</div>
                 {smaData.tradingRestrictions.map((r, i) => (
                   <div key={i} style={smaPanelStyles.item}>
                     <span style={{ color: 'var(--red-primary)' }}>🚫</span>
-                    <span>{r.symbol}: {r.closeOnly ? 'Close-Only' : 'Restricted'}</span>
+                    <span>{r.symbol}: {r.closeOnly ? t('topbar.closeOnly') : t('topbar.restricted')}</span>
                     <span className="mono" style={{ color: 'var(--text-disabled)', fontSize: '11px' }}>
-                      until {new Date(r.expiresAt).toLocaleDateString()}
+                      {t('topbar.until', { date: formatDate(r.expiresAt) })}
                     </span>
                   </div>
                 ))}
@@ -582,26 +586,26 @@ function SMAPanel({ smaData, smaStatus, onClose }: {
 
             {smaData.tradingBanUntil && (
               <div style={{ ...smaPanelStyles.item, color: 'var(--red-primary)' }}>
-                Trading Ban until {new Date(smaData.tradingBanUntil).toLocaleDateString()}
+                {t('topbar.tradingBanUntil', { date: formatDate(smaData.tradingBanUntil) })}
               </div>
             )}
 
             {smaData.marginBanUntil && (
               <div style={{ ...smaPanelStyles.item, color: 'var(--red-primary)' }}>
-                Margin Revoked until {new Date(smaData.marginBanUntil).toLocaleDateString()}
+                {t('topbar.marginRevokedUntil', { date: formatDate(smaData.marginBanUntil) })}
               </div>
             )}
 
             {/* Past Penalties */}
             {smaData.penalties.length > 0 && (
               <div style={smaPanelStyles.section}>
-                <div style={smaPanelStyles.sectionTitle}>Penalties</div>
+                <div style={smaPanelStyles.sectionTitle}>{t('topbar.penalties')}</div>
                 {smaData.penalties.map((p) => (
                   <div key={p.id} style={smaPanelStyles.item}>
                     <span style={{ color: 'var(--red-primary)' }}>💰</span>
                     <span>{p.description}</span>
                     <span className="mono" style={{ color: 'var(--red-primary)', fontSize: '12px', fontWeight: 600 }}>
-                      -${p.fineAmount.toLocaleString()}
+                      -{formatMoney(p.fineAmount)}
                     </span>
                   </div>
                 ))}
@@ -611,12 +615,12 @@ function SMAPanel({ smaData, smaStatus, onClose }: {
             {/* Violation History */}
             {smaData.violations.length > 0 && (
               <div style={smaPanelStyles.section}>
-                <div style={smaPanelStyles.sectionTitle}>Violation History</div>
+                <div style={smaPanelStyles.sectionTitle}>{t('topbar.violationHistory')}</div>
                 {smaData.violations.slice(-5).reverse().map((v) => (
                   <div key={v.id} style={{ ...smaPanelStyles.item, fontSize: '11px' }}>
                     <span>{v.description}</span>
                     <span className="mono" style={{ color: 'var(--text-disabled)' }}>
-                      {new Date(v.detectedAt).toLocaleDateString()}
+                      {formatDate(v.detectedAt)}
                     </span>
                   </div>
                 ))}
@@ -626,7 +630,7 @@ function SMAPanel({ smaData, smaStatus, onClose }: {
             {/* Clean state message */}
             {smaData.violations.length === 0 && smaData.investigations.length === 0 && smaData.penalties.length === 0 && (
               <div style={{ padding: '16px', color: 'var(--text-disabled)', textAlign: 'center' as const, fontSize: '13px' }}>
-                No regulatory issues. Your trading activity is clean.
+                {t('topbar.cleanState')}
               </div>
             )}
           </>
@@ -634,7 +638,7 @@ function SMAPanel({ smaData, smaStatus, onClose }: {
 
         {!smaData && (
           <div style={{ padding: '16px', color: 'var(--text-disabled)', textAlign: 'center' as const, fontSize: '13px' }}>
-            Loading regulatory data...
+            {t('topbar.loadingRegData')}
           </div>
         )}
       </div>
@@ -654,13 +658,14 @@ function GameMenu({ onClose, onResume, onSettings, onWiki, onSave, onMainMenu, c
   equity?: number;
   trades?: number;
 }) {
+  const { t } = useI18n();
   const menuItems = [
-    { label: 'Resume', icon: Play, action: onResume, shortcut: 'Esc' },
-    { label: 'Save Game', icon: Save, action: onSave, shortcut: 'Ctrl+S' },
-    { label: 'Settings', icon: Settings, action: onSettings },
-    { label: 'Wiki', icon: BookOpen, action: onWiki, shortcut: 'Ctrl+W' },
-    ...(canRetire ? [{ label: 'Retire', icon: FastForward, action: onRetire, color: 'var(--gold-primary)' as string }] : []),
-    { label: 'Main Menu', icon: Menu, action: onMainMenu, color: 'var(--red-primary)' as string },
+    { label: t('topbar.resume'), icon: Play, action: onResume, shortcut: 'Esc' },
+    { label: t('topbar.saveGame'), icon: Save, action: onSave, shortcut: 'Ctrl+S' },
+    { label: t('topbar.settings'), icon: Settings, action: onSettings },
+    { label: t('topbar.wiki'), icon: BookOpen, action: onWiki, shortcut: 'Ctrl+W' },
+    ...(canRetire ? [{ label: t('topbar.retire'), icon: FastForward, action: onRetire, color: 'var(--gold-primary)' as string }] : []),
+    { label: t('topbar.mainMenu'), icon: Menu, action: onMainMenu, color: 'var(--red-primary)' as string },
   ];
 
   return (

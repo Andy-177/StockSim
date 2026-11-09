@@ -5,6 +5,7 @@ import { WebSocketClient } from '@/services/websocket';
 import { createLogger } from '@/services/logger';
 import { audio } from '@/services/audio';
 import { ConfirmOrderDialog } from './ConfirmOrderDialog';
+import { useI18n } from '@/i18n/I18nContext';
 
 const log = createLogger('OrderPanel');
 
@@ -22,6 +23,7 @@ const UNLOCK_SHORT = 5;      // trades needed to unlock Short Selling
 const UNLOCK_ADVANCED = 3;   // trades needed to unlock Stop/StopLimit/Trailing
 
 export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
+  const { t, formatMoney } = useI18n();
   const { portfolio, lastOrderResult, setOrderResult, isMarketOpen, beginnerMode } = useMarketStore();
 
   const [side, setSide] = useState<OrderSide>('Buy');
@@ -102,23 +104,23 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
         const order = lastOrderResult.order;
         if (order && order.status === 'Filled') {
           setToast({
-            message: `${order.side} ${order.quantity} ${order.symbol} @ $${order.fillPrice?.toFixed(2)}`,
+            message: `${order.side} ${order.quantity} ${order.symbol} @ ${formatMoney(order.fillPrice ?? 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             type: 'success',
           });
           setQuantity('');
         } else if (order && order.status === 'Pending') {
-          setToast({ message: `Order queued (market closed)`, type: 'success' });
+          setToast({ message: t('orderPanel.orderQueued'), type: 'success' });
           setQuantity('');
         } else if (order && order.status === 'Open') {
-          setToast({ message: `Limit order placed`, type: 'success' });
+          setToast({ message: t('orderPanel.limitPlaced'), type: 'success' });
           setQuantity('');
         }
       } else {
-        setToast({ message: lastOrderResult.error || 'Order failed', type: 'error' });
+        setToast({ message: lastOrderResult.error || t('orderPanel.orderFailed'), type: 'error' });
       }
       setOrderResult(null);
     }
-  }, [lastOrderResult, setOrderResult]);
+  }, [lastOrderResult, setOrderResult, t, formatMoney]);
 
   // Beginner mode feature locks
   const tradeCount = portfolio?.tradeCount ?? 0;
@@ -210,11 +212,11 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
       <div style={{ display: 'flex', gap: 0, marginBottom: '12px' }}>
         <button onClick={() => setSide('Buy')}
           style={{ ...tabStyle(side === 'Buy', 'var(--green-primary)', 'var(--green-dim)'), borderRadius: '4px 0 0 4px' }}>
-          BUY
+          {t('orderPanel.buy')}
         </button>
         <button onClick={() => setSide('Sell')}
           style={tabStyle(side === 'Sell', 'var(--red-primary)', 'var(--red-dim)')}>
-          SELL
+          {t('orderPanel.sell')}
         </button>
         <button
           onClick={() => !shortLocked && setSide('Short')}
@@ -222,9 +224,9 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
             ...tabStyle(side === 'Short', 'var(--warning)', 'color-mix(in srgb, var(--warning) 15%, transparent)'),
             ...(shortLocked ? { opacity: 0.35, cursor: 'not-allowed' } : {}),
           }}
-          title={shortLocked ? `Complete ${UNLOCK_SHORT} trades to unlock Short Selling` : 'Short Sell'}
+          title={shortLocked ? t('orderPanel.unlockShortTitle', { count: UNLOCK_SHORT }) : t('orderPanel.shortSellTitle')}
         >
-          SHORT{shortLocked ? ' (Locked)' : ''}
+          {t('orderPanel.short')}{shortLocked ? ` ${t('orderPanel.locked')}` : ''}
         </button>
         <button
           onClick={() => !shortLocked && setSide('Cover')}
@@ -233,9 +235,9 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
             borderRadius: '0 4px 4px 0',
             ...(shortLocked ? { opacity: 0.35, cursor: 'not-allowed' } : {}),
           }}
-          title={shortLocked ? `Complete ${UNLOCK_SHORT} trades to unlock Cover` : 'Cover Short Position'}
+          title={shortLocked ? t('orderPanel.unlockCoverTitle', { count: UNLOCK_SHORT }) : t('orderPanel.coverTitle')}
         >
-          COVER{shortLocked ? ' (Locked)' : ''}
+          {t('orderPanel.cover')}{shortLocked ? ` ${t('orderPanel.locked')}` : ''}
         </button>
       </div>
 
@@ -252,9 +254,9 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
             border: `1px solid ${isHighSI ? 'color-mix(in srgb, var(--red-primary) 20%, transparent)' : 'var(--border)'}`,
             borderRadius: '4px', fontSize: '11px',
           }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Short Interest</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{t('orderPanel.shortInterest')}</span>
             <span className="mono" style={{ fontWeight: 600, color: isHighSI ? 'var(--red-primary)' : 'var(--text-primary)' }}>
-              {siPct.toFixed(1)}%{isHighSI ? ' (High)' : ''}
+              {siPct.toFixed(1)}%{isHighSI ? ` ${t('orderPanel.high')}` : ''}
             </span>
           </div>
         ) : null;
@@ -267,14 +269,14 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
           borderRadius: '4px', padding: '6px 10px', marginBottom: '10px',
           fontSize: '11px', color: 'var(--warning)', lineHeight: 1.4,
         }}>
-          <span style={{ fontWeight: 700 }}>SSR Active</span> — Short Sale Restriction in effect. Market short orders will be converted to limit orders at Bid + $0.01.
+          <span style={{ fontWeight: 700 }}>{t('orderPanel.ssrActive')}</span> — {t('orderPanel.ssrDesc')}
         </div>
       )}
 
       {/* Order Type Dropdown */}
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-          Order Type
+          {t('orderPanel.orderType')}
         </label>
         <select
           value={orderType}
@@ -291,18 +293,18 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
             fontSize: '13px',
           }}
         >
-          <option value="Market">Market</option>
-          <option value="Limit">Limit</option>
-          <option value="Stop" disabled={advancedLocked}>{advancedLocked ? 'Stop (Locked)' : 'Stop'}</option>
-          <option value="StopLimit" disabled={advancedLocked}>{advancedLocked ? 'Stop-Limit (Locked)' : 'Stop-Limit'}</option>
-          <option value="TrailingStop" disabled={advancedLocked}>{advancedLocked ? 'Trailing Stop (Locked)' : 'Trailing Stop'}</option>
+          <option value="Market">{t('orderPanel.market')}</option>
+          <option value="Limit">{t('orderPanel.limit')}</option>
+          <option value="Stop" disabled={advancedLocked}>{t('orderPanel.stop')}{advancedLocked ? t('orderPanel.lockedSuffix') : ''}</option>
+          <option value="StopLimit" disabled={advancedLocked}>{t('orderPanel.stopLimit')}{advancedLocked ? t('orderPanel.lockedSuffix') : ''}</option>
+          <option value="TrailingStop" disabled={advancedLocked}>{t('orderPanel.trailingStop')}{advancedLocked ? t('orderPanel.lockedSuffix') : ''}</option>
         </select>
         <div style={{ fontSize: '10px', color: 'var(--text-disabled)', marginTop: '3px' }}>
-          {orderType === 'Market' && 'Executes immediately at current price.'}
-          {orderType === 'Limit' && 'Executes only at your specified price or better.'}
-          {orderType === 'Stop' && 'Triggers a market order when price hits your stop level.'}
-          {orderType === 'StopLimit' && 'Triggers a limit order when price hits your stop level.'}
-          {orderType === 'TrailingStop' && 'Stop price follows the market, locks in profits.'}
+          {orderType === 'Market' && t('orderPanel.marketDesc')}
+          {orderType === 'Limit' && t('orderPanel.limitDesc')}
+          {orderType === 'Stop' && t('orderPanel.stopDesc')}
+          {orderType === 'StopLimit' && t('orderPanel.stopLimitDesc')}
+          {orderType === 'TrailingStop' && t('orderPanel.trailingDesc')}
         </div>
       </div>
 
@@ -313,16 +315,16 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
           borderRadius: '4px', padding: '6px 10px', marginBottom: '10px',
           fontSize: '10px', color: '#93c5fd', lineHeight: 1.5,
         }}>
-          <span style={{ fontWeight: 700 }}>Beginner Mode</span> — {tradeCount}/{UNLOCK_SHORT} trades completed.
-          {advancedLocked && ` Complete ${UNLOCK_ADVANCED} trades to unlock Stop orders.`}
-          {shortLocked && ` Complete ${UNLOCK_SHORT} trades to unlock Short Selling.`}
+          <span style={{ fontWeight: 700 }}>{t('orderPanel.beginnerMode')}</span> {t('orderPanel.tradesCompleted', { trades: tradeCount, needed: UNLOCK_SHORT })}
+          {advancedLocked && t('orderPanel.unlockStop', { needed: UNLOCK_ADVANCED })}
+          {shortLocked && t('orderPanel.unlockShort', { needed: UNLOCK_SHORT })}
         </div>
       )}
 
       {/* Quantity */}
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-          Quantity
+          {t('orderPanel.quantity')}
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <input
@@ -344,7 +346,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
               fontSize: '14px',
             }}
           />
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>shares</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('orderPanel.shares')}</span>
         </div>
         {/* Quick Size Buttons */}
         <div style={{ display: 'flex', gap: '3px', marginTop: '4px' }}>
@@ -362,7 +364,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
                 background: 'var(--bg-tertiary)', cursor: 'pointer',
                 fontSize: '10px', fontWeight: 600, fontFamily: 'var(--font-mono)',
                 color: 'var(--text-disabled)',
-              }} title={`${maxShares} shares (${opt.label} of buying power)`}>{opt.label}</button>
+              }} title={t('orderPanel.sharesOfBp', { shares: maxShares, label: opt.label })}>{opt.label}</button>
             );
           })}
         </div>
@@ -370,7 +372,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
         {qty > 0 && (
           <div className="mono" style={{ fontSize: '10px', color: 'var(--text-disabled)', marginTop: '3px' }}>
             {portfolio && portfolio.totalEquity > 0 && (
-              <span>Position: {((estimatedCost / portfolio.totalEquity) * 100).toFixed(1)}% of equity</span>
+              <span>{t('orderPanel.positionPct', { pct: ((estimatedCost / portfolio.totalEquity) * 100).toFixed(1) })}</span>
             )}
           </div>
         )}
@@ -380,7 +382,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
       {orderType === 'Limit' && (
         <div style={{ marginBottom: '12px' }}>
           <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            Limit Price
+            {t('orderPanel.limitPrice')}
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>$</span>
@@ -411,12 +413,12 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
       {orderType !== 'Market' && (
         <div style={{ marginBottom: '12px' }}>
           <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            Time in Force
+            {t('orderPanel.timeInForce')}
           </label>
           <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
             {[
-              { value: 'GTC', label: 'GTC', title: 'Good-Til-Canceled' },
-              { value: 'Day', label: 'Day', title: 'Day Order (expires at close)' },
+              { value: 'GTC', label: t('orderPanel.gtc'), title: t('orderPanel.gtcTitle') },
+              { value: 'Day', label: t('orderPanel.day'), title: t('orderPanel.dayTitle') },
             ].map(opt => (
               <button key={opt.value} title={opt.title} style={{
                 flex: 1, padding: '6px', border: 'none', cursor: 'pointer',
@@ -427,7 +429,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
             ))}
           </div>
           <div style={{ fontSize: '10px', color: 'var(--text-disabled)', marginTop: '3px' }}>
-            GTC orders remain active until filled or canceled.
+            {t('orderPanel.gtcDesc')}
           </div>
         </div>
       )}
@@ -436,7 +438,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
       {(orderType === 'Stop' || orderType === 'StopLimit') && (
         <div style={{ marginBottom: '12px' }}>
           <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            Stop Price (trigger)
+            {t('orderPanel.stopPrice')}
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>$</span>
@@ -446,8 +448,8 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-disabled)', marginTop: '4px' }}>
             {orderType === 'Stop'
-              ? 'When price reaches this level, a market order will be placed.'
-              : 'When price hits stop, a limit order will be placed.'}
+              ? t('orderPanel.stopDescMarket')
+              : t('orderPanel.stopDescLimit')}
           </div>
         </div>
       )}
@@ -456,7 +458,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
       {orderType === 'TrailingStop' && (
         <div style={{ marginBottom: '12px' }}>
           <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            Trail Amount ($)
+            {t('orderPanel.trailAmount')}
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>$</span>
@@ -465,7 +467,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
               style={{ flex: 1, height: '36px', background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px', padding: '0 8px', fontFamily: 'var(--font-mono)', fontSize: '14px' }} />
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-disabled)', marginTop: '4px' }}>
-            Stop price adjusts automatically as the market moves in your favor.
+            {t('orderPanel.trailDesc')}
           </div>
         </div>
       )}
@@ -473,14 +475,14 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
       {/* Estimated Cost */}
       <div style={{ marginBottom: '8px' }}>
         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-          {isBuy ? 'Estimated Cost' : 'Estimated Proceeds'}
+          {isBuy ? t('orderPanel.estimatedCost') : t('orderPanel.estimatedProceeds')}
         </label>
         <span className="mono" style={{ fontSize: '16px', color: 'var(--text-primary)' }}>
-          ${qty > 0 ? totalCost.toFixed(2) : '0.00'}
+          {formatMoney(qty > 0 ? totalCost : 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
         {qty > 0 && (
           <span style={{ fontSize: '11px', color: 'var(--text-disabled)', marginLeft: '8px' }}>
-            (incl. ${commission} commission)
+            {t('orderPanel.inclCommission', { amount: commission.toFixed(2) })}
           </span>
         )}
       </div>
@@ -490,17 +492,17 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
         {isBuy ? (
           <div>
             <span style={{ color: totalCost > buyingPower && qty > 0 ? 'var(--red-primary)' : undefined }}>
-              {marginEnabled ? 'Buying Power' : 'Available Cash'}: <span className="mono">${marginEnabled ? buyingPower.toFixed(2) : cash.toFixed(2)}</span>
+              {marginEnabled ? t('orderPanel.buyingPower') : t('orderPanel.availableCash')}: <span className="mono">{formatMoney(marginEnabled ? buyingPower : cash, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </span>
             {marginEnabled && (
               <div style={{ fontSize: '10px', color: 'var(--text-disabled)', marginTop: '2px' }}>
-                Cash: ${cash.toFixed(2)} + Margin: ${(buyingPower - cash).toFixed(2)}
+                {t('orderPanel.cashAndMargin', { cash: formatMoney(cash, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin: formatMoney(buyingPower - cash, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
               </div>
             )}
           </div>
         ) : (
           <span>
-            Position: <span className="mono">{position ? `${position.shares} shares @ $${position.averageCost.toFixed(2)}` : 'None'}</span>
+            {t('orderPanel.position')}: <span className="mono">{position ? t('orderPanel.sharesAt', { shares: position.shares, price: position.averageCost.toFixed(2) }) : t('orderPanel.none')}</span>
           </span>
         )}
       </div>
@@ -508,7 +510,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
       {/* Market status hint */}
       {!isMarketOpen && (
         <div style={{ marginBottom: '12px', fontSize: '11px', color: 'var(--text-disabled)' }}>
-          Market is closed. Orders will execute at market open.
+          {t('orderPanel.marketClosedHint')}
         </div>
       )}
 
@@ -533,7 +535,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
           color: side === 'Short' ? '#000000' : 'var(--text-primary)',
         }}
       >
-        {submitting ? 'PLACING...' : `PLACE ${side.toUpperCase()} ORDER`}
+        {submitting ? t('orderPanel.placing') : t('orderPanel.placeOrder', { side: side.toUpperCase() })}
       </button>
 
       {/* Toast */}
@@ -557,13 +559,13 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
       {position && (
         <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '6px' }}>
           <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            Your Position
+            {t('orderPanel.yourPosition')}
           </div>
           <div className="mono" style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px' }}>
-            {position.shares} shares @ ${position.averageCost.toFixed(2)}
+            {t('orderPanel.sharesAt', { shares: position.shares, price: position.averageCost.toFixed(2) })}
           </div>
           <div className="mono" style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            Value: ${position.marketValue.toFixed(2)}
+            {t('orderPanel.value')} {formatMoney(position.marketValue, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div
             className="mono"
@@ -572,7 +574,7 @@ export function OrderPanel({ stock, wsClient }: OrderPanelProps) {
               color: position.unrealizedPnL >= 0 ? 'var(--green-primary)' : 'var(--red-primary)',
             }}
           >
-            P&L: {position.unrealizedPnL >= 0 ? '+' : ''}${position.unrealizedPnL.toFixed(2)}
+            {t('orderPanel.pl')} {position.unrealizedPnL >= 0 ? '+' : ''}{formatMoney(position.unrealizedPnL, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             {' '}({position.unrealizedPnLPercent >= 0 ? '+' : ''}{position.unrealizedPnLPercent.toFixed(2)}%)
           </div>
           <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>

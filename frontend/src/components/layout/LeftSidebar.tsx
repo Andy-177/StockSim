@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useMarketStore } from '@/stores/marketStore';
 import { X, Plus, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
+import { useI18n } from '@/i18n/I18nContext';
 
 export function LeftSidebar() {
+  const { t, formatMoney } = useI18n();
   const [collapsed, setCollapsed] = useState(false);
   const watchlist = useMarketStore((s) => s.watchlist);
   const watchlists = useMarketStore((s) => s.watchlists);
@@ -38,7 +40,7 @@ export function LeftSidebar() {
   if (collapsed) {
     return (
       <aside style={{ ...styles.sidebar, width: '36px', minWidth: '36px', alignItems: 'center', padding: '8px 0' }}>
-        <button onClick={() => setCollapsed(false)} style={styles.collapseBtn} title="Expand sidebar" aria-label="Expand sidebar">
+        <button onClick={() => setCollapsed(false)} style={styles.collapseBtn} title={t('sidebar.expand')} aria-label={t('sidebar.expand')}>
           <PanelLeftOpen size={16} />
         </button>
       </aside>
@@ -50,15 +52,15 @@ export function LeftSidebar() {
       {/* Watchlist */}
       <div style={styles.panel}>
         <div style={styles.panelHeader}>
-          <span style={styles.panelTitle}>Watchlist ({watchlist.length})</span>
+          <span style={styles.panelTitle}>{t('sidebar.watchlist', { count: watchlist.length })}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {watchlistNames.length < 5 && (
               <button onClick={() => setShowNewListInput(true)} style={{
                 background: 'transparent', border: 'none', color: 'var(--text-disabled)',
                 cursor: 'pointer', padding: '2px', fontSize: '12px',
-              }} title="New watchlist" aria-label="Create new watchlist"><Plus size={12} /></button>
+              }} title={t('sidebar.newWatchlist')} aria-label={t('sidebar.createWatchlist')}><Plus size={12} /></button>
             )}
-            <button onClick={() => setCollapsed(true)} style={styles.collapseBtn} title="Collapse sidebar" aria-label="Collapse sidebar">
+            <button onClick={() => setCollapsed(true)} style={styles.collapseBtn} title={t('sidebar.collapse')} aria-label={t('sidebar.collapse')}>
               <PanelLeftClose size={14} />
             </button>
           </div>
@@ -85,7 +87,7 @@ export function LeftSidebar() {
         {showNewListInput && (
           <div style={{ display: 'flex', gap: '4px', padding: '0 8px 4px' }}>
             <input type="text" value={newListName} onChange={e => setNewListName(e.target.value)}
-              placeholder="Name..." autoFocus
+              placeholder={t('sidebar.namePlaceholder')} autoFocus
               onKeyDown={e => { if (e.key === 'Enter' && newListName.trim()) { createWatchlist(newListName.trim()); setNewListName(''); setShowNewListInput(false); } if (e.key === 'Escape') setShowNewListInput(false); }}
               style={{ flex: 1, height: '22px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '3px', color: 'var(--text-primary)', fontSize: '11px', padding: '0 6px', fontFamily: 'var(--font-ui)' }} />
           </div>
@@ -99,7 +101,7 @@ export function LeftSidebar() {
                   type="text"
                   value={watchlistFilter}
                   onChange={e => setWatchlistFilter(e.target.value)}
-                  placeholder="Filter..."
+                  placeholder={t('sidebar.filter')}
                   style={{
                     width: '100%', height: '24px', background: 'var(--bg-input)',
                     border: '1px solid var(--border)', borderRadius: '3px',
@@ -110,7 +112,7 @@ export function LeftSidebar() {
               </div>
             )}
             <div style={{ display: 'flex', gap: '1px', background: 'var(--bg-tertiary)', borderRadius: '3px', overflow: 'hidden', flexShrink: 0 }}>
-              {([['default', 'All'], ['gainers', '▲'], ['losers', '▼']] as const).map(([key, label]) => (
+              {([['default', t('common.all')], ['gainers', '▲'], ['losers', '▼']] as const).map(([key, label]) => (
                 <button key={key} onClick={() => setWatchlistSort(key)} style={{
                   padding: '3px 6px', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 600,
                   fontFamily: 'var(--font-mono)',
@@ -124,9 +126,9 @@ export function LeftSidebar() {
         <div style={styles.list}>
           {watchlist.length === 0 ? (
             <div style={styles.empty}>
-              Your watchlist is empty.
+              {t('sidebar.emptyTitle')}
               <div style={{ marginTop: '4px', fontSize: '11px' }}>
-                Click + on any stock in the Market tab to add it.
+                {t('sidebar.emptyHint')}
               </div>
             </div>
           ) : (
@@ -167,7 +169,7 @@ export function LeftSidebar() {
                     </div>
                     <span style={styles.name}>{stock.name}</span>
                     <span style={{ fontSize: '9px', color: 'var(--text-disabled)', display: 'block' }}>
-                      {stock.sector} | Vol: {stock.volume >= 1e6 ? `${(stock.volume / 1e6).toFixed(1)}M` : `${(stock.volume / 1e3).toFixed(0)}K`}
+                      {stock.sector} | {t('sidebar.volume')}: {stock.volume >= 1e6 ? `${(stock.volume / 1e6).toFixed(1)}M` : `${(stock.volume / 1e3).toFixed(0)}K`}
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -176,7 +178,7 @@ export function LeftSidebar() {
                         key={`${symbol}-${stock.price}`}
                         className={`mono ${priceFlash.get(symbol) === 'up' ? 'price-up' : priceFlash.get(symbol) === 'down' ? 'price-down' : ''}`}
                         style={styles.price}
-                      >${stock.price.toFixed(2)}</span>
+                      >{formatMoney(stock.price, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       <span
                         className={`mono ${stock.changePercent >= 0 ? 'positive' : 'negative'}`}
                         style={styles.change}
@@ -188,19 +190,19 @@ export function LeftSidebar() {
                       <button
                         onClick={(e) => { e.stopPropagation(); selectStock(symbol); setTimeout(() => window.dispatchEvent(new CustomEvent('tradingShortcut', { detail: 'Buy' })), 50); }}
                         style={{ background: 'none', border: '1px solid var(--green-primary)', borderRadius: '2px', color: 'var(--green-primary)', cursor: 'pointer', padding: '1px 4px', fontSize: '9px', fontWeight: 700, lineHeight: 1 }}
-                        title="Quick Buy"
+                        title={t('sidebar.quickBuy')}
                       >B</button>
                       <button
                         onClick={(e) => { e.stopPropagation(); selectStock(symbol); setTimeout(() => window.dispatchEvent(new CustomEvent('tradingShortcut', { detail: 'Sell' })), 50); }}
                         style={{ background: 'none', border: '1px solid var(--red-primary)', borderRadius: '2px', color: 'var(--red-primary)', cursor: 'pointer', padding: '1px 4px', fontSize: '9px', fontWeight: 700, lineHeight: 1 }}
-                        title="Quick Sell"
+                        title={t('sidebar.quickSell')}
                       >S</button>
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); removeFromWatchlist(symbol); }}
                       style={styles.removeBtn}
-                      title="Remove from watchlist"
-                      aria-label={`Remove ${symbol} from watchlist`}
+                      title={t('sidebar.removeFromWatchlist')}
+                      aria-label={t('sidebar.removeSymbol', { symbol })}
                     >
                       <X size={12} />
                     </button>
@@ -215,11 +217,11 @@ export function LeftSidebar() {
       {/* Sectors */}
       <div style={styles.panel}>
         <div style={styles.panelHeader}>
-          <span style={styles.panelTitle}>Sectors ({sectorSummary.length})</span>
+          <span style={styles.panelTitle}>{t('sidebar.sectors', { count: sectorSummary.length })}</span>
         </div>
         <div style={styles.list}>
           {sectorSummary.length === 0 ? (
-            <div style={styles.empty}>Loading sectors...</div>
+            <div style={styles.empty}>{t('sidebar.loadingSectors')}</div>
           ) : (
             sectorSummary.map(([name, data]) => {
               const maxChange = Math.max(...sectorSummary.map(([, d]) => Math.abs(d.avgChange)), 0.01);

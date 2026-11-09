@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMarketStore } from '@/stores/marketStore';
+import { useI18n } from '@/i18n/I18nContext';
 
 /**
  * Scrolling ticker at the bottom of the screen.
@@ -7,6 +8,7 @@ import { useMarketStore } from '@/stores/marketStore';
  * Spec 3.6 & 13.1.
  */
 export function NewsTicker() {
+  const { t } = useI18n();
   const newsItems = useMarketStore((s) => s.newsItems);
   const stockList = useMarketStore((s) => s.stockList);
   const selectStock = useMarketStore((s) => s.selectStock);
@@ -36,7 +38,7 @@ export function NewsTicker() {
           cursor: 'pointer', border: 'none',
         }}
       >
-        {mode === 'news' ? 'NEWS' : 'TAPE'}
+        {mode === 'news' ? t('nav.news').toUpperCase() : 'TAPE'}
       </button>
 
       <div style={styles.scrollArea}>
@@ -95,7 +97,7 @@ export function NewsTicker() {
               })}
             </div>
           ) : (
-            <span style={styles.emptyText}>Waiting for market events...</span>
+            <span style={styles.emptyText}>{t('newsTab.noNews')}</span>
           )
         ) : (
           /* Price Ticker Mode — Bloomberg TV style */

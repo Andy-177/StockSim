@@ -3,12 +3,14 @@ import { useMarketStore } from '@/stores/marketStore';
 import { OrderPanel } from '@/components/trading/OrderPanel';
 import { WebSocketClient } from '@/services/websocket';
 import { TrendingUp, TrendingDown, BarChart3, MousePointerClick, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { useI18n } from '@/i18n/I18nContext';
 
 interface RightSidebarProps {
   wsClient: WebSocketClient;
 }
 
 export function RightSidebar({ wsClient }: RightSidebarProps) {
+  const { t, formatMoney } = useI18n();
   const selectedSymbol = useMarketStore((s) => s.selectedSymbol);
   const stocks = useMarketStore((s) => s.stocks);
   const stockList = useMarketStore((s) => s.stockList);
@@ -38,7 +40,7 @@ export function RightSidebar({ wsClient }: RightSidebarProps) {
       <aside style={{ ...styles.sidebar, width: '40px', minWidth: '40px', alignItems: 'center', padding: '8px 0' }}>
         <button onClick={() => setCollapsed(false)} style={{
           background: 'none', border: 'none', color: 'var(--text-disabled)', cursor: 'pointer', padding: '4px',
-        }} title="Expand trading panel"><PanelRightOpen size={16} /></button>
+        }} title={t('rightSidebar.expand')}><PanelRightOpen size={16} /></button>
         {stock && (
           <div style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', marginTop: '12px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
             <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{stock.symbol}</span>
@@ -57,7 +59,7 @@ export function RightSidebar({ wsClient }: RightSidebarProps) {
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 8px 0' }}>
         <button onClick={() => setCollapsed(true)} style={{
           background: 'none', border: 'none', color: 'var(--text-disabled)', cursor: 'pointer', padding: '2px',
-        }} title="Collapse trading panel"><PanelRightClose size={14} /></button>
+        }} title={t('rightSidebar.collapse')}><PanelRightClose size={14} /></button>
       </div>
       {/* Selected Stock Info */}
       <div style={styles.panel}>
@@ -73,7 +75,7 @@ export function RightSidebar({ wsClient }: RightSidebarProps) {
                 key={`price-${stock.price}`}
                 className={`mono ${priceFlash.get(selectedSymbol!) === 'up' ? 'price-up' : priceFlash.get(selectedSymbol!) === 'down' ? 'price-down' : ''}`}
                 style={styles.bigPrice}
-              >${stock.price.toFixed(2)}</span>
+              >{formatMoney(stock.price, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               <span className={`mono ${stock.changePercent >= 0 ? 'positive' : 'negative'}`} style={styles.bigChange}>
                 {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
                 {stock.changePercent >= 0 ? ' ▲' : ' ▼'}
@@ -84,15 +86,15 @@ export function RightSidebar({ wsClient }: RightSidebarProps) {
           <div style={styles.emptyState}>
             <MousePointerClick size={24} style={{ color: 'var(--text-disabled)', marginBottom: '8px' }} />
             <div style={{ color: 'var(--text-disabled)', fontSize: '13px', marginBottom: '16px' }}>
-              Select a stock to trade
+              {t('rightSidebar.selectStock')}
             </div>
             {quickPicks.gainers.length > 0 && (
               <>
-                <QuickPickSection icon={<TrendingUp size={12} />} title="Top Gainers" items={quickPicks.gainers} onSelect={selectStock} />
-                <QuickPickSection icon={<TrendingDown size={12} />} title="Top Losers" items={quickPicks.losers} onSelect={selectStock} />
-                <QuickPickSection icon={<BarChart3 size={12} />} title="Most Active" items={quickPicks.active} onSelect={selectStock} />
+                <QuickPickSection icon={<TrendingUp size={12} />} title={t('rightSidebar.topGainers')} items={quickPicks.gainers} onSelect={selectStock} />
+                <QuickPickSection icon={<TrendingDown size={12} />} title={t('rightSidebar.topLosers')} items={quickPicks.losers} onSelect={selectStock} />
+                <QuickPickSection icon={<BarChart3 size={12} />} title={t('rightSidebar.mostActive')} items={quickPicks.active} onSelect={selectStock} />
                 {(quickPicks.commodities ?? []).length > 0 && (
-                  <QuickPickSection icon={<TrendingUp size={12} />} title="Commodities" items={quickPicks.commodities!} onSelect={selectStock} />
+                  <QuickPickSection icon={<TrendingUp size={12} />} title={t('rightSidebar.commodities')} items={quickPicks.commodities!} onSelect={selectStock} />
                 )}
               </>
             )}
@@ -103,12 +105,12 @@ export function RightSidebar({ wsClient }: RightSidebarProps) {
       {/* Order Panel */}
       <div style={styles.orderSection}>
         <div style={styles.panelHeader}>
-          <span style={styles.panelTitle}>Order</span>
+          <span style={styles.panelTitle}>{t('rightSidebar.order')}</span>
         </div>
         {stock ? (
           <OrderPanel stock={stock} wsClient={wsClient} />
         ) : (
-          <div style={styles.orderPlaceholder}>No stock selected</div>
+          <div style={styles.orderPlaceholder}>{t('rightSidebar.noStock')}</div>
         )}
       </div>
     </aside>

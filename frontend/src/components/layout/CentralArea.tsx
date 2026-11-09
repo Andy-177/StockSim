@@ -10,12 +10,14 @@ import { NewsTab } from '@/components/tabs/NewsTab';
 import { AnalyticsTab } from '@/components/tabs/AnalyticsTab';
 import { JournalTab } from '@/components/tabs/JournalTab';
 import { styles } from '@/styles/centralStyles';
+import { useI18n } from '@/i18n/I18nContext';
 
 interface CentralAreaProps {
   wsClient: WebSocketClient;
 }
 
 export function CentralArea({ wsClient }: CentralAreaProps) {
+  const { t } = useI18n();
   const activeTab = useMarketStore((s) => s.activeTab);
   const selectedSymbol = useMarketStore((s) => s.selectedSymbol);
   const showStockDetail = useMarketStore((s) => s.showStockDetail);
@@ -27,7 +29,7 @@ export function CentralArea({ wsClient }: CentralAreaProps) {
       <main style={styles.central}>
         <div style={styles.placeholder}>
           <span style={styles.logoLarge}>STOCKSIM</span>
-          <span style={styles.subtitle}>Connecting to backend...</span>
+          <span style={styles.subtitle}>{t('app.connecting')}</span>
         </div>
       </main>
     );
@@ -44,7 +46,7 @@ export function CentralArea({ wsClient }: CentralAreaProps) {
           background: 'color-mix(in srgb, var(--text-accent) 15%, transparent)', border: '1px solid var(--accent-glow)',
           fontSize: '12px', fontWeight: 700, color: 'var(--text-accent)',
           fontFamily: 'var(--font-mono)', letterSpacing: '2px',
-        }}>PAUSED</div>
+        }}>{t('topbar.pause').toUpperCase()}</div>
       )}
 
       {/* Stock Detail View (Spec 3.4.2) */}

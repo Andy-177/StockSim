@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMarketStore } from '@/stores/marketStore';
 import { Target, Clock, ChevronDown, ChevronUp, Trophy, AlertTriangle } from 'lucide-react';
+import { useI18n } from '@/i18n/I18nContext';
 
 /**
  * Bloomberg-style Scenario Progress Bar.
@@ -17,6 +18,7 @@ const DIFF_COLORS: Record<string, { bg: string; text: string; border: string }> 
 };
 
 export function ScenarioBar() {
+  const { t, formatMoney } = useI18n();
   const scenarioProgress = useMarketStore((s) => s.scenarioProgress);
   const portfolio = useMarketStore((s) => s.portfolio);
   const [collapsed, setCollapsed] = useState(false);
@@ -55,9 +57,9 @@ export function ScenarioBar() {
 
         {/* Center: mini progress */}
         <div style={S.centerGroup}>
-          <span style={S.labelDim}>Target</span>
+          <span style={S.labelDim}>{t('scenarioBar.target')}</span>
           <span style={S.monoValue}>
-            ${targetValue ? targetValue.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}
+            {targetValue ? formatMoney(targetValue, { maximumFractionDigits: 0 }) : '—'}
           </span>
           <div style={S.miniProgressTrack}>
             <div style={{
@@ -76,12 +78,11 @@ export function ScenarioBar() {
           {daysRemaining !== null && (
             <>
               <Clock size={12} style={{ color: isUrgent ? 'var(--red-primary)' : 'var(--text-disabled)' }} />
-              <span style={{
-                ...S.monoValue,
+              <span style={{ ...S.monoValue,
                 color: isUrgent ? 'var(--red-primary)' : 'var(--text-secondary)',
                 fontWeight: isUrgent ? 700 : 500,
               }}>
-                {daysRemaining}d
+                {t('scenarioBar.daysSuffix', { days: daysRemaining })}
               </span>
             </>
           )}
@@ -100,8 +101,8 @@ export function ScenarioBar() {
                 {targetDescription || winCondition}
               </span>
               <span style={S.monoSmall}>
-                ${currentEquity.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                {targetValue ? ` / $${targetValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : ''}
+                {formatMoney(currentEquity, { maximumFractionDigits: 0 })}
+                {targetValue ? ` / ${formatMoney(targetValue, { maximumFractionDigits: 0 })}` : ''}
               </span>
             </div>
             <div style={S.progressTrack}>
@@ -121,19 +122,19 @@ export function ScenarioBar() {
 
           {/* Stats row */}
           <div style={S.statsRow}>
-            <StatCell label="EQUITY" value={`$${currentEquity.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} color={isPositive ? 'var(--green-primary)' : 'var(--red-primary)'} />
-            <StatCell label="RETURN" value={`${isPositive ? '+' : ''}${totalReturn.toFixed(2)}%`} color={isPositive ? 'var(--green-primary)' : 'var(--red-primary)'} />
-            <StatCell label="TRADES" value={`${trades}`} />
+            <StatCell label={t('scenarioBar.equity')} value={formatMoney(currentEquity, { maximumFractionDigits: 0 })} color={isPositive ? 'var(--green-primary)' : 'var(--red-primary)'} />
+            <StatCell label={t('scenarioBar.return')} value={`${isPositive ? '+' : ''}${totalReturn.toFixed(2)}%`} color={isPositive ? 'var(--green-primary)' : 'var(--red-primary)'} />
+            <StatCell label={t('scenarioBar.trades')} value={`${trades}`} />
             {daysRemaining !== null && (
               <StatCell
-                label="DAYS LEFT"
+                label={t('scenarioBar.daysLeft')}
                 value={`${daysRemaining}`}
                 color={isUrgent ? 'var(--red-primary)' : undefined}
                 icon={isUrgent ? <AlertTriangle size={10} style={{ color: 'var(--red-primary)' }} /> : undefined}
               />
             )}
             {loseCondition && (
-              <StatCell label="FAIL IF" value={loseCondition} color="var(--text-disabled)" small />
+              <StatCell label={t('scenarioBar.failIf')} value={loseCondition} color="var(--text-disabled)" small />
             )}
           </div>
         </div>

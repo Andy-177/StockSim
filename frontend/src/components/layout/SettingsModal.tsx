@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useI18n } from '@/i18n/I18nContext';
 
 // --- Keybindings ---
 
@@ -133,19 +134,20 @@ interface SettingsModalProps {
   onSettingsChange: (settings: GameSettings) => void;
 }
 
-const TABS = [
-  { id: 'gameplay', label: 'Gameplay' },
-  { id: 'simulation', label: 'Simulation' },
-  { id: 'video', label: 'Video' },
-  { id: 'audio', label: 'Audio' },
-  { id: 'controls', label: 'Controls' },
-  { id: 'accessibility', label: 'Accessibility' },
-] as const;
-
 export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: SettingsModalProps) {
+  const { t } = useI18n();
   const [tab, setTab] = useState('gameplay');
   const trapRef = useFocusTrap<HTMLDivElement>();
   if (!isOpen) return null;
+
+  const TABS = [
+    { id: 'gameplay', label: t('settings.gameplay') },
+    { id: 'simulation', label: t('settings.simulation') },
+    { id: 'video', label: t('settings.video') },
+    { id: 'audio', label: t('settings.audio') },
+    { id: 'controls', label: t('settings.controls') },
+    { id: 'accessibility', label: t('settings.accessibility') },
+  ] as const;
 
   const set = <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
     onSettingsChange({ ...settings, [key]: value });
@@ -156,17 +158,17 @@ export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: S
       <div ref={trapRef} style={S.modal} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div style={S.header}>
-          <span style={S.title}>Settings</span>
-          <span role="button" tabIndex={0} style={S.closeBtn} onClick={onClose} onKeyDown={e => e.key === 'Enter' && onClose()} aria-label="Close settings">x</span>
+          <span style={S.title}>{t('settings.title')}</span>
+          <span role="button" tabIndex={0} style={S.closeBtn} onClick={onClose} onKeyDown={e => e.key === 'Enter' && onClose()} aria-label={t('settings.closeSettings')}>x</span>
         </div>
 
         <div style={S.body}>
           {/* Sidebar */}
           <div style={S.sidebar}>
-            {TABS.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                style={{ ...S.tab, ...(tab === t.id ? S.tabActive : {}) }}>
-                {t.label}
+            {TABS.map((tabItem) => (
+              <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
+                style={{ ...S.tab, ...(tab === tabItem.id ? S.tabActive : {}) }}>
+                {tabItem.label}
               </button>
             ))}
           </div>
@@ -175,36 +177,36 @@ export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: S
           <div style={S.content}>
 
             {tab === 'gameplay' && <>
-              <H>General</H>
-              <Toggle k="autosave" label="Autosave" v={settings.autosave} set={set} />
+              <H>{t('settings.general')}</H>
+              <Toggle k="autosave" label={t('settings.autosave')} v={settings.autosave} set={set} />
               {settings.autosave && (
-                <Select k="autosaveInterval" label="Autosave Interval" v={String(settings.autosaveInterval)}
-                  opts={[['1','1 min'],['5','5 min'],['10','10 min'],['15','15 min'],['30','30 min']]}
+                <Select k="autosaveInterval" label={t('settings.autosaveInterval')} v={String(settings.autosaveInterval)}
+                  opts={[['1', t('settings.min1')],['5', t('settings.min5')],['10', t('settings.min10')],['15', t('settings.min15')],['30', t('settings.min30')]]}
                   set={(_, val) => set('autosaveInterval', Number(val))} />
               )}
               {settings.autosave && (
-                <Toggle k="showAutosaveNotification" label="Show Autosave Notification" v={settings.showAutosaveNotification} set={set} />
+                <Toggle k="showAutosaveNotification" label={t('settings.showAutosaveNotification')} v={settings.showAutosaveNotification} set={set} />
               )}
-              <Toggle k="showTooltips" label="Show Tooltips" v={settings.showTooltips} set={set} />
-              <Toggle k="confirmOrders" label="Confirm Orders" v={settings.confirmOrders} set={set} />
-              <Toggle k="skipWeekends" label="Skip Weekends" v={settings.skipWeekends} set={set} />
-              <Select k="language" label="Language" v={settings.language}
-                opts={[['en','English'],['de','Deutsch']]} set={set} />
-              <H>Auto-Pause</H>
-              <Toggle k="autoPauseOnNews" label="On Breaking News" v={settings.autoPauseOnNews} set={set} />
-              <Toggle k="autoPauseOnAlert" label="On Price Alert" v={settings.autoPauseOnAlert} set={set} />
-              <Toggle k="autoPauseOnMarginCall" label="On Margin Call" v={settings.autoPauseOnMarginCall} set={set} />
-              <Toggle k="autoPauseOnShortSqueeze" label="On Short Squeeze" v={settings.autoPauseOnShortSqueeze} set={set} />
-              <Toggle k="autoPauseOnOrderExecution" label="On Order Execution" v={settings.autoPauseOnOrderExecution} set={set} />
-              <Toggle k="autoPauseOnMarketOpen" label="On Market Open" v={settings.autoPauseOnMarketOpen} set={set} />
+              <Toggle k="showTooltips" label={t('settings.showTooltips')} v={settings.showTooltips} set={set} />
+              <Toggle k="confirmOrders" label={t('settings.confirmOrders')} v={settings.confirmOrders} set={set} />
+              <Toggle k="skipWeekends" label={t('settings.skipWeekends')} v={settings.skipWeekends} set={set} />
+              <Select k="language" label={t('settings.language')} v={settings.language}
+                opts={[['en', 'English'],['de', 'Deutsch'],['zh', '简体中文'],['tw', '繁體中文']]} set={set} />
+              <H>{t('settings.autoPause')}</H>
+              <Toggle k="autoPauseOnNews" label={t('settings.onBreakingNews')} v={settings.autoPauseOnNews} set={set} />
+              <Toggle k="autoPauseOnAlert" label={t('settings.onPriceAlert')} v={settings.autoPauseOnAlert} set={set} />
+              <Toggle k="autoPauseOnMarginCall" label={t('settings.onMarginCall')} v={settings.autoPauseOnMarginCall} set={set} />
+              <Toggle k="autoPauseOnShortSqueeze" label={t('settings.onShortSqueeze')} v={settings.autoPauseOnShortSqueeze} set={set} />
+              <Toggle k="autoPauseOnOrderExecution" label={t('settings.onOrderExecution')} v={settings.autoPauseOnOrderExecution} set={set} />
+              <Toggle k="autoPauseOnMarketOpen" label={t('settings.onMarketOpen')} v={settings.autoPauseOnMarketOpen} set={set} />
             </>}
 
             {tab === 'simulation' && <>
-              <H>Trading Costs</H>
-              <Toggle k="tradingCommission" label="Trading Commission" v={settings.tradingCommission} set={set} />
+              <H>{t('settings.tradingCosts')}</H>
+              <Toggle k="tradingCommission" label={t('settings.tradingCommission')} v={settings.tradingCommission} set={set} />
               {settings.tradingCommission && (
                 <div style={S.row}>
-                  <span style={S.label}>Commission Amount</span>
+                  <span style={S.label}>{t('settings.commissionAmount')}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>$</span>
                     <input type="number" min={0} max={50} step={0.05}
@@ -214,97 +216,97 @@ export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: S
                   </div>
                 </div>
               )}
-              <Toggle k="marginInterest" label="Margin Interest" v={settings.marginInterest} set={set} />
-              <Toggle k="shortBorrowFees" label="Short Borrow Fees" v={settings.shortBorrowFees} set={set} />
-              <H>Taxes</H>
-              <Toggle k="enableTaxes" label="Enable Taxes" v={settings.enableTaxes} set={set} />
+              <Toggle k="marginInterest" label={t('settings.marginInterest')} v={settings.marginInterest} set={set} />
+              <Toggle k="shortBorrowFees" label={t('settings.shortBorrowFees')} v={settings.shortBorrowFees} set={set} />
+              <H>{t('settings.taxes')}</H>
+              <Toggle k="enableTaxes" label={t('settings.enableTaxes')} v={settings.enableTaxes} set={set} />
               {settings.enableTaxes && (
-                <Select k="taxRateMode" label="Tax Rate Mode" v={settings.taxRateMode}
-                  opts={[['realistic','Realistic (15-35%)'],['flat','Flat (20%)'],['off','Off']]} set={set} />
+                <Select k="taxRateMode" label={t('settings.taxRateMode')} v={settings.taxRateMode}
+                  opts={[['realistic', t('settings.realistic')],['flat', t('settings.flat')],['off', t('settings.off')]]} set={set} />
               )}
-              <H>Regulation</H>
-              <Toggle k="smaEnforcement" label="SMA Enforcement" v={settings.smaEnforcement} set={set} />
+              <H>{t('settings.regulation')}</H>
+              <Toggle k="smaEnforcement" label={t('settings.smaEnforcement')} v={settings.smaEnforcement} set={set} />
               {settings.smaEnforcement && (
-                <Select k="smaStrictness" label="SMA Strictness" v={settings.smaStrictness}
-                  opts={[['lenient','Lenient'],['normal','Normal'],['strict','Strict']]} set={set} />
+                <Select k="smaStrictness" label={t('settings.smaStrictness')} v={settings.smaStrictness}
+                  opts={[['lenient', t('settings.lenient')],['normal', t('settings.normal')],['strict', t('settings.strict')]]} set={set} />
               )}
             </>}
 
             {tab === 'video' && <>
-              <H>Theme</H>
-              <Select k="theme" label="Color Theme" v={settings.theme}
-                opts={[['default','Classic (Blue)'],['slate','Slate (Neutral)'],['amber','Amber (Terminal)']]} set={set} />
-              <H>Interface</H>
-              <Slider k="uiScale" label="UI Scale" v={settings.uiScale} min={80} max={150} step={10}
+              <H>{t('settings.theme')}</H>
+              <Select k="theme" label={t('settings.colorTheme')} v={settings.theme}
+                opts={[['default', t('settings.classicBlue')],['slate', t('settings.slateNeutral')],['amber', t('settings.amberTerminal')]]} set={set} />
+              <H>{t('settings.interface')}</H>
+              <Slider k="uiScale" label={t('settings.uiScale')} v={settings.uiScale} min={80} max={150} step={10}
                 fmt={v => `${v}%`} set={set} />
-              <Select k="defaultChartTimeframe" label="Default Chart Timeframe" v={settings.defaultChartTimeframe}
-                opts={[['1D','1 Day'],['1W','1 Week'],['1M','1 Month'],['ALL','All']]} set={set} />
-              <Select k="defaultChartType" label="Default Chart Type" v={settings.defaultChartType}
-                opts={[['candle','Candlestick'],['line','Line'],['area','Area']]} set={set} />
-              <Select k="numberFormat" label="Number Format" v={settings.numberFormat}
-                opts={[['us','1,234.56 (US)'],['eu','1.234,56 (EU)']]} set={set} />
-              <Toggle k="showSparklines" label="Show Sparklines in Watchlist" v={settings.showSparklines} set={set} />
+              <Select k="defaultChartTimeframe" label={t('settings.defaultChartTimeframe')} v={settings.defaultChartTimeframe}
+                opts={[['1D', t('settings.oneDay')],['1W', t('settings.oneWeek')],['1M', t('settings.oneMonth')],['ALL', t('settings.allTime')]]} set={set} />
+              <Select k="defaultChartType" label={t('settings.defaultChartType')} v={settings.defaultChartType}
+                opts={[['candle', t('settings.candlestick')],['line', t('settings.line')],['area', t('settings.area')]]} set={set} />
+              <Select k="numberFormat" label={t('settings.numberFormat')} v={settings.numberFormat}
+                opts={[['us', t('settings.usFormat')],['eu', t('settings.euFormat')]]} set={set} />
+              <Toggle k="showSparklines" label={t('settings.showSparklines')} v={settings.showSparklines} set={set} />
             </>}
 
             {tab === 'audio' && <>
-              <H>Volume</H>
-              <Slider k="masterVolume" label="Master" v={settings.masterVolume} min={0} max={100} step={5}
+              <H>{t('settings.volume')}</H>
+              <Slider k="masterVolume" label={t('settings.master')} v={settings.masterVolume} min={0} max={100} step={5}
                 fmt={v => `${v}%`} set={set} />
-              <Slider k="musicVolume" label="Music" v={settings.musicVolume} min={0} max={100} step={5}
+              <Slider k="musicVolume" label={t('settings.music')} v={settings.musicVolume} min={0} max={100} step={5}
                 fmt={v => `${v}%`} set={set} />
-              <Slider k="sfxVolume" label="Sound Effects" v={settings.sfxVolume} min={0} max={100} step={5}
+              <Slider k="sfxVolume" label={t('settings.soundEffects')} v={settings.sfxVolume} min={0} max={100} step={5}
                 fmt={v => `${v}%`} set={set} />
-              <H>Notifications</H>
-              <Toggle k="marketBellSound" label="Market Bell" v={settings.marketBellSound} set={set} />
-              <Toggle k="tradeSound" label="Trade Execution" v={settings.tradeSound} set={set} />
-              <Toggle k="newsAlertSound" label="News Alerts" v={settings.newsAlertSound} set={set} />
+              <H>{t('settings.notifications')}</H>
+              <Toggle k="marketBellSound" label={t('settings.marketBell')} v={settings.marketBellSound} set={set} />
+              <Toggle k="tradeSound" label={t('settings.tradeExecution')} v={settings.tradeSound} set={set} />
+              <Toggle k="newsAlertSound" label={t('settings.newsAlerts')} v={settings.newsAlertSound} set={set} />
             </>}
 
             {tab === 'controls' && <>
-              <H>Time</H>
-              <KB label="Pause / Resume" bk="pauseResume" b={settings.keyBindings}
+              <H>{t('settings.time')}</H>
+              <KB label={t('settings.pauseResume')} bk="pauseResume" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="1x Speed" bk="speed1" b={settings.keyBindings}
+              <KB label={t('settings.oneX')} bk="speed1" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="2x Speed" bk="speed2" b={settings.keyBindings}
+              <KB label={t('settings.twoX')} bk="speed2" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="5x Speed" bk="speed3" b={settings.keyBindings}
+              <KB label={t('settings.fiveX')} bk="speed3" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="10x Speed" bk="speed4" b={settings.keyBindings}
+              <KB label={t('settings.tenX')} bk="speed4" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <H>Navigation</H>
-              <KB label="Dashboard" bk="tabDashboard" b={settings.keyBindings}
+              <H>{t('settings.navigation')}</H>
+              <KB label={t('nav.dashboard')} bk="tabDashboard" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="Portfolio" bk="tabPortfolio" b={settings.keyBindings}
+              <KB label={t('nav.portfolio')} bk="tabPortfolio" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="Market" bk="tabMarket" b={settings.keyBindings}
+              <KB label={t('nav.market')} bk="tabMarket" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="Orders" bk="tabOrders" b={settings.keyBindings}
+              <KB label={t('nav.orders')} bk="tabOrders" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="News" bk="tabNews" b={settings.keyBindings}
+              <KB label={t('nav.news')} bk="tabNews" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="Analytics" bk="tabAnalytics" b={settings.keyBindings}
+              <KB label={t('nav.analytics')} bk="tabAnalytics" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
               <H>System</H>
-              <KB label="Quick Save" bk="quickSave" b={settings.keyBindings}
+              <KB label={t('settings.quickSave')} bk="quickSave" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
-              <KB label="Help" bk="help" b={settings.keyBindings}
+              <KB label={t('settings.help')} bk="help" b={settings.keyBindings}
                 onChange={b => set('keyBindings', { ...settings.keyBindings, ...b })} />
               <div style={{ marginTop: '8px' }}>
                 <button onClick={() => set('keyBindings', { ...DEFAULT_KEYBINDINGS })}
-                  style={S.resetBtn}>Reset to Defaults</button>
+                  style={S.resetBtn}>{t('settings.resetToDefaults')}</button>
               </div>
             </>}
 
             {tab === 'accessibility' && <>
-              <H>Visual</H>
-              <Toggle k="reducedAnimations" label="Reduced Animations" v={settings.reducedAnimations} set={set} />
-              <Toggle k="highContrast" label="High Contrast" v={settings.highContrast} set={set} />
-              <Toggle k="largeText" label="Large Text" v={settings.largeText} set={set} />
-              <Select k="colorblindMode" label="Colorblind Mode" v={settings.colorblindMode}
-                opts={[['off','Off'],['deuteranopia','Deuteranopia (Red-Green)'],['protanopia','Protanopia (Red-Green)'],['tritanopia','Tritanopia (Blue-Yellow)']]} set={set} />
-              <H>Reading</H>
-              <Slider k="newsTickerSpeed" label="Ticker Speed" v={settings.newsTickerSpeed} min={20} max={120} step={5}
+              <H>{t('settings.visual')}</H>
+              <Toggle k="reducedAnimations" label={t('settings.reducedAnimations')} v={settings.reducedAnimations} set={set} />
+              <Toggle k="highContrast" label={t('settings.highContrast')} v={settings.highContrast} set={set} />
+              <Toggle k="largeText" label={t('settings.largeText')} v={settings.largeText} set={set} />
+              <Select k="colorblindMode" label={t('settings.colorblindMode')} v={settings.colorblindMode}
+                opts={[['off', t('settings.off')],['deuteranopia', t('settings.deuteranopia')],['protanopia', t('settings.protanopia')],['tritanopia', t('settings.tritanopia')]]} set={set} />
+              <H>{t('settings.reading')}</H>
+              <Slider k="newsTickerSpeed" label={t('settings.tickerSpeed')} v={settings.newsTickerSpeed} min={20} max={120} step={5}
                 fmt={v => `${v}`} set={set} />
             </>}
 
@@ -314,9 +316,9 @@ export function SettingsModal({ isOpen, onClose, settings, onSettingsChange }: S
         {/* Footer */}
         <div style={S.footer}>
           <button style={{ ...S.footerBtn, color: 'var(--text-disabled)' }}
-            onClick={() => onSettingsChange(DEFAULT_SETTINGS)}>Reset All</button>
+            onClick={() => onSettingsChange(DEFAULT_SETTINGS)}>{t('settings.resetAll')}</button>
           <span style={{ fontSize: '11px', color: 'var(--text-disabled)', fontFamily: 'var(--font-mono)', alignSelf: 'center' }}>v{APP_VERSION}</span>
-          <button style={{ ...S.footerBtn, color: 'var(--text-accent)' }} onClick={onClose}>Done</button>
+          <button style={{ ...S.footerBtn, color: 'var(--text-accent)' }} onClick={onClose}>{t('common.done')}</button>
         </div>
       </div>
     </div>

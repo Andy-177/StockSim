@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { WebSocketClient } from '@/services/websocket';
+import { useI18n } from '@/i18n/I18nContext';
 
 interface SaveSlot {
   fileName: string;
@@ -30,6 +31,7 @@ interface SaveDialogProps {
 }
 
 export function SaveDialog({ isOpen, onClose, wsClient }: SaveDialogProps) {
+  const { t } = useI18n();
   const [saveName, setSaveName] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -62,10 +64,10 @@ export function SaveDialog({ isOpen, onClose, wsClient }: SaveDialogProps) {
   return (
     <div style={S.overlay} onClick={onClose}>
       <div style={S.dialog} onClick={e => e.stopPropagation()}>
-        <h2 style={S.title}>Save Game</h2>
+        <h2 style={S.title}>{t('saveLoad.saveGame')}</h2>
         <input
           type="text"
-          placeholder="Enter save name..."
+          placeholder={t('saveLoad.enterSaveName')}
           value={saveName}
           onChange={e => setSaveName(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
@@ -73,11 +75,11 @@ export function SaveDialog({ isOpen, onClose, wsClient }: SaveDialogProps) {
           autoFocus
           maxLength={40}
         />
-        <p style={S.hint}>Leave empty for "Quicksave"</p>
+        <p style={S.hint}>{t('saveLoad.leaveEmpty')}</p>
         <div style={S.buttons}>
-          <button style={S.cancelBtn} onClick={onClose}>Cancel</button>
+          <button style={S.cancelBtn} onClick={onClose}>{t('common.cancel')}</button>
           <button style={S.saveBtn} onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? t('saveLoad.saving') : t('saveLoad.save')}
           </button>
         </div>
       </div>
@@ -93,6 +95,7 @@ interface LoadScreenProps {
 }
 
 export function LoadScreen({ isOpen, onClose, onLoad, wsClient }: LoadScreenProps) {
+  const { t, formatDateTime, formatDate, formatMoney } = useI18n();
   const [games, setGames] = useState<SaveGame[]>([]);
   const [expandedGame, setExpandedGame] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,22 +117,13 @@ export function LoadScreen({ isOpen, onClose, onLoad, wsClient }: LoadScreenProp
 
   if (!isOpen) return null;
 
-  const formatDate = (iso: string) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
-
-  const formatGameDate = (iso: string) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
+  const formatSaveDate = (iso: string) => formatDateTime(iso);
+  const formatGameDate = (iso: string) => formatDate(iso, { month: 'short', day: 'numeric', year: 'numeric' });
 
   const formatCash = (cash: number) => {
-    if (cash >= 1_000_000) return `$${(cash / 1_000_000).toFixed(1)}M`;
-    if (cash >= 1_000) return `$${(cash / 1_000).toFixed(1)}K`;
-    return `$${cash.toFixed(0)}`;
+    if (cash >= 1_000_000) return formatMoney(cash / 1_000_000, { maximumFractionDigits: 1 }) + 'M';
+    if (cash >= 1_000) return formatMoney(cash / 1_000, { maximumFractionDigits: 1 }) + 'K';
+    return formatMoney(cash, { maximumFractionDigits: 0 });
   };
 
   const tradingDays = (ticks: number) => Math.floor(ticks / 390);
@@ -138,14 +132,14 @@ export function LoadScreen({ isOpen, onClose, onLoad, wsClient }: LoadScreenProp
     <div style={S.overlay} onClick={onClose}>
       <div style={S.loadPanel} onClick={e => e.stopPropagation()}>
         <div style={S.loadHeader}>
-          <h2 style={S.title}>Load Game</h2>
+          <h2 style={S.title}>{t('saveLoad.loadGame')}</h2>
           <button style={S.closeBtn} onClick={onClose}>×</button>
         </div>
 
         {loading ? (
-          <p style={S.hint}>Loading saves...</p>
+          <p style={S.hint}>{t('saveLoad.loadingSaves')}</p>
         ) : games.length === 0 ? (
-          <p style={S.hint}>No saved games found.</p>
+          <p style={S.hint}>{t('saveLoad.noSaves')}</p>
         ) : (
           <div style={S.gameList}>
             {games.map(game => (
@@ -155,10 +149,10 @@ export function LoadScreen({ isOpen, onClose, onLoad, wsClient }: LoadScreenProp
                   onClick={() => setExpandedGame(expandedGame === game.gameId ? null : game.gameId)}
                 >
                   <div>
-                    <span style={S.gameName}>{game.playerName}'s Game</span>
-                    <span style={S.gameInfo}> — {game.totalSaves} save{game.totalSaves !== 1 ? 's' : ''}</span>
+                    <span style={S.gameName}>{t('saveLoad.gameOf', { name: game.playerName })}</span>
+                    <span style={S.gameInfo}> — {t('saveLoad.saveCount', { count: game.totalSaves, plural: game.totalSaves !== 1 ? 's' : '' })}</span>
                   </div>
-                  <span style={S.gameDate}>Last: {formatDate(game.lastPlayed)}</span>
+                  <span style={S.gameDate}>{t('saveLoad.last', { date: formatSaveDate(game.lastPlayed) })}</span>
                 </div>
 
                 {expandedGame === game.gameId && (
@@ -172,12 +166,12 @@ export function LoadScreen({ isOpen, onClose, onLoad, wsClient }: LoadScreenProp
                         <div style={S.saveMain}>
                           <span style={S.saveName}>{save.saveName}</span>
                           <span style={S.saveMeta}>
-                            {formatGameDate(save.gameDate)} • Day {tradingDays(save.tickCount)} • {save.marketPhase}
+                            {formatGameDate(save.gameDate)} • {t('saveLoad.day', { days: tradingDays(save.tickCount) })} • {save.marketPhase}
                           </span>
                         </div>
                         <div style={S.saveRight}>
                           <span style={S.saveCash}>{formatCash(save.cash)}</span>
-                          <span style={S.saveTime}>{formatDate(save.saveDate)}</span>
+                          <span style={S.saveTime}>{formatSaveDate(save.saveDate)}</span>
                         </div>
                       </div>
                     ))}

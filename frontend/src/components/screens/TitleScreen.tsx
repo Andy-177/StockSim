@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useI18n } from '@/i18n/I18nContext';
 
 interface TitleScreenProps {
   onNewGame: () => void;
@@ -10,6 +11,7 @@ interface TitleScreenProps {
 }
 
 export function TitleScreen({ onNewGame, onContinue, onLoadGame, onSettings, onQuit, hasSaves }: TitleScreenProps) {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   useEffect(() => { setTimeout(() => setVisible(true), 100); }, []);
 
@@ -21,15 +23,15 @@ export function TitleScreen({ onNewGame, onContinue, onLoadGame, onSettings, onQ
       <div style={S.left}>
         <div style={{ ...S.fadeIn, opacity: visible ? 1 : 0, transitionDelay: '0ms' }}>
           <h1 style={S.logo}>STOCKSIM</h1>
-          <p style={S.tagline}>Trade. Speculate. Dominate.</p>
+          <p style={S.tagline}>{t('title.tagline')}</p>
         </div>
 
         <nav style={S.nav}>
           {/* Primary group */}
           <div style={S.group}>
-            <Btn label="New Game" onClick={onNewGame} primary delay={visible ? 120 : 0} />
-            {hasSaves && <Btn label="Continue" onClick={onContinue} delay={visible ? 180 : 0} />}
-            <Btn label="Load Game" onClick={onLoadGame} disabled={!hasSaves} delay={visible ? 240 : 0} />
+            <Btn label={t('title.newGame')} onClick={onNewGame} primary delay={visible ? 120 : 0} />
+            {hasSaves && <Btn label={t('title.continue')} onClick={onContinue} delay={visible ? 180 : 0} />}
+            <Btn label={t('title.loadGame')} onClick={onLoadGame} disabled={!hasSaves} delay={visible ? 240 : 0} />
           </div>
 
           {/* Online — coming soon */}
@@ -37,8 +39,8 @@ export function TitleScreen({ onNewGame, onContinue, onLoadGame, onSettings, onQ
 
           {/* Secondary group */}
           <div style={{ ...S.group, marginTop: '14px' }}>
-            <Btn label="Settings" onClick={onSettings} small delay={visible ? 380 : 0} />
-            {onQuit && <Btn label="Quit" onClick={onQuit} small muted delay={visible ? 440 : 0} />}
+            <Btn label={t('title.settings')} onClick={onSettings} small delay={visible ? 380 : 0} />
+            {onQuit && <Btn label={t('title.quit')} onClick={onQuit} small muted delay={visible ? 440 : 0} />}
           </div>
         </nav>
 
@@ -49,11 +51,11 @@ export function TitleScreen({ onNewGame, onContinue, onLoadGame, onSettings, onQ
       <div style={S.rightWrap}>
         <div style={{ ...S.panel, ...S.fadeIn, opacity: visible ? 1 : 0, transitionDelay: '500ms' }}>
           <div style={S.panelHead}>
-            <span style={S.panelLabel}>PATCH NOTES</span>
+            <span style={S.panelLabel}>{t('title.patchNotes')}</span>
             <span style={S.panelVer}>v0.2.0 — Wall Street</span>
           </div>
           <div style={S.panelBody}>
-            <Sec t="v0.3.0 Highlights" items={[
+            <Sec t={t('title.highlights')} items={[
               'Supply Chain: events cascade through supplier/customer networks',
               'History Mode: 9 playable historical crises (2008, COVID, GameStop...)',
               'Dynamic Fundamentals: CEO archetype drives revenue, margins, employees',
@@ -63,12 +65,12 @@ export function TitleScreen({ onNewGame, onContinue, onLoadGame, onSettings, onQ
               '39 scenarios, 53 achievements, 2,400+ news headlines',
               'RSI sub-chart, price alerts, stock comparison, sector rotation',
             ]} />
-            <Sec t="Core Features" items={['Education Wiki — 57 articles','Options Trading — Black-Scholes, Greeks, IV','Supply Chain + Whisper Network — no other game has this']} />
-            <Sec t="Realism" items={['Wash Sale Rule (30-day cost basis adjustment)','Player Reputation (Market Influence + SEC Scrutiny)','Dynamic Fundamentals (Revenue/Earnings drift daily)','Overnight gaps, margin interest, short borrow fees']} />
-            <Sec t="Content" items={['20 scenarios (incl. Big Short, Pandemic, Squeeze)','16 Decision Cases (interactive learning)','500 event templates, 226 analysts, 80 glossary entries']} />
-            <Sec t="Polish" items={['Achievement animations, career rank promotion','VIX gauge, Fear & Greed, Market Phase display','Auto-pause on news/alerts/margin calls','Settings fully wired (audio toggles, keybindings)','584 automated tests, Playwright E2E setup']} />
+            <Sec t={t('title.coreFeatures')} items={['Education Wiki — 57 articles','Options Trading — Black-Scholes, Greeks, IV','Supply Chain + Whisper Network — no other game has this']} />
+            <Sec t={t('title.realism')} items={['Wash Sale Rule (30-day cost basis adjustment)','Player Reputation (Market Influence + SEC Scrutiny)','Dynamic Fundamentals (Revenue/Earnings drift daily)','Overnight gaps, margin interest, short borrow fees']} />
+            <Sec t={t('title.content')} items={['20 scenarios (incl. Big Short, Pandemic, Squeeze)','16 Decision Cases (interactive learning)','500 event templates, 226 analysts, 80 glossary entries']} />
+            <Sec t={t('title.polish')} items={['Achievement animations, career rank promotion','VIX gauge, Fear & Greed, Market Phase display','Auto-pause on news/alerts/margin calls','Settings fully wired (audio toggles, keybindings)','584 automated tests, Playwright E2E setup']} />
           </div>
-          <div style={S.panelFoot}>Next: Steam Early Access — August 2026</div>
+          <div style={S.panelFoot}>{t('title.nextSteam')}</div>
         </div>
       </div>
     </div>
@@ -76,6 +78,7 @@ export function TitleScreen({ onNewGame, onContinue, onLoadGame, onSettings, onQ
 }
 
 function OnlineBtn({ delay }: { delay: number }) {
+  const { t } = useI18n();
   const [h, setH] = useState(false);
   return (
     <div style={{ ...S.fadeIn, opacity: delay ? 1 : 0, transitionDelay: `${delay}ms` }}>
@@ -85,8 +88,8 @@ function OnlineBtn({ delay }: { delay: number }) {
         onMouseLeave={() => setH(false)}
         style={{ ...S.btn, ...S.btnDisabled, cursor: 'default' }}
       >
-        <span style={{ transition: 'opacity 200ms', opacity: h ? 0 : 1 }}>Online</span>
-        <span style={{ transition: 'opacity 200ms', opacity: h ? 1 : 0, position: 'absolute', left: '20px', fontSize: '13px', color: 'var(--text-disabled)', fontStyle: 'italic', fontWeight: 400 }}>Coming Soon</span>
+        <span style={{ transition: 'opacity 200ms', opacity: h ? 0 : 1 }}>{t('title.online')}</span>
+        <span style={{ transition: 'opacity 200ms', opacity: h ? 1 : 0, position: 'absolute', left: '20px', fontSize: '13px', color: 'var(--text-disabled)', fontStyle: 'italic', fontWeight: 400 }}>{t('title.comingSoon')}</span>
       </button>
     </div>
   );

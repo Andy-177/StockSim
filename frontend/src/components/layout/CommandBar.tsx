@@ -3,6 +3,7 @@ import { useMarketStore } from '@/stores/marketStore';
 import { WebSocketClient } from '@/services/websocket';
 // Types used via store
 import { Search, TrendingUp, BarChart3, Briefcase, FileText, Newspaper, PieChart, BookOpen, ArrowRight } from 'lucide-react';
+import { useI18n } from '@/i18n/I18nContext';
 
 interface CommandBarProps {
   wsClient: WebSocketClient;
@@ -20,6 +21,7 @@ interface CommandResult {
 }
 
 export function CommandBar({ wsClient, isOpen, onClose }: CommandBarProps) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -39,24 +41,24 @@ export function CommandBar({ wsClient, isOpen, onClose }: CommandBarProps) {
 
   // Navigation commands
   const navCommands: CommandResult[] = useMemo(() => [
-    { id: 'nav-dashboard', type: 'nav', label: 'Dashboard', sublabel: 'Market overview, heatmap, movers', icon: <BarChart3 size={14} />, action: () => { setActiveTab('dashboard'); onClose(); } },
-    { id: 'nav-portfolio', type: 'nav', label: 'Portfolio', sublabel: 'Positions, P&L, allocation', icon: <Briefcase size={14} />, action: () => { setActiveTab('portfolio'); onClose(); } },
-    { id: 'nav-market', type: 'nav', label: 'Market', sublabel: 'All stocks, screener, search', icon: <TrendingUp size={14} />, action: () => { setActiveTab('market'); onClose(); } },
-    { id: 'nav-orders', type: 'nav', label: 'Orders', sublabel: 'Open and filled orders', icon: <FileText size={14} />, action: () => { setActiveTab('orders'); onClose(); } },
-    { id: 'nav-news', type: 'nav', label: 'News', sublabel: 'Market events and headlines', icon: <Newspaper size={14} />, action: () => { setActiveTab('news'); onClose(); } },
-    { id: 'nav-analytics', type: 'nav', label: 'Analytics', sublabel: 'Performance, stats, achievements', icon: <PieChart size={14} />, action: () => { setActiveTab('analytics'); onClose(); } },
-    { id: 'nav-journal', type: 'nav', label: 'Journal', sublabel: 'Trading history and P&L', icon: <BookOpen size={14} />, action: () => { setActiveTab('journal'); onClose(); } },
-    { id: 'nav-options', type: 'nav', label: 'Options', sublabel: 'Options chain, calls, puts', icon: <TrendingUp size={14} />, action: () => { setActiveTab('options'); onClose(); } },
-  ], [setActiveTab, onClose]);
+    { id: 'nav-dashboard', type: 'nav', label: t('nav.dashboard'), sublabel: t('commandBar.dashboardSub'), icon: <BarChart3 size={14} />, action: () => { setActiveTab('dashboard'); onClose(); } },
+    { id: 'nav-portfolio', type: 'nav', label: t('nav.portfolio'), sublabel: t('commandBar.portfolioSub'), icon: <Briefcase size={14} />, action: () => { setActiveTab('portfolio'); onClose(); } },
+    { id: 'nav-market', type: 'nav', label: t('nav.market'), sublabel: t('commandBar.marketSub'), icon: <TrendingUp size={14} />, action: () => { setActiveTab('market'); onClose(); } },
+    { id: 'nav-orders', type: 'nav', label: t('nav.orders'), sublabel: t('commandBar.ordersSub'), icon: <FileText size={14} />, action: () => { setActiveTab('orders'); onClose(); } },
+    { id: 'nav-news', type: 'nav', label: t('nav.news'), sublabel: t('commandBar.newsSub'), icon: <Newspaper size={14} />, action: () => { setActiveTab('news'); onClose(); } },
+    { id: 'nav-analytics', type: 'nav', label: t('nav.analytics'), sublabel: t('commandBar.analyticsSub'), icon: <PieChart size={14} />, action: () => { setActiveTab('analytics'); onClose(); } },
+    { id: 'nav-journal', type: 'nav', label: t('nav.journal'), sublabel: t('commandBar.journalSub'), icon: <BookOpen size={14} />, action: () => { setActiveTab('journal'); onClose(); } },
+    { id: 'nav-options', type: 'nav', label: t('nav.options'), sublabel: t('commandBar.optionsSub'), icon: <TrendingUp size={14} />, action: () => { setActiveTab('options'); onClose(); } },
+  ], [setActiveTab, onClose, t]);
 
   // Action commands
   const actionCommands: CommandResult[] = useMemo(() => [
-    { id: 'act-pause', type: 'action', label: 'Pause', sublabel: 'Pause simulation', icon: <span style={{ fontSize: '14px' }}>||</span>, action: () => { wsClient.send('SetSpeed', { speed: 0 }); onClose(); } },
-    { id: 'act-play', type: 'action', label: 'Play 1x', sublabel: 'Normal speed', icon: <ArrowRight size={14} />, action: () => { wsClient.send('SetSpeed', { speed: 1 }); onClose(); } },
-    { id: 'act-fast', type: 'action', label: 'Fast 5x', sublabel: 'Very fast speed', icon: <ArrowRight size={14} />, action: () => { wsClient.send('SetSpeed', { speed: 5 }); onClose(); } },
-    { id: 'act-max', type: 'action', label: 'Max 10x', sublabel: 'Maximum speed', icon: <ArrowRight size={14} />, action: () => { wsClient.send('SetSpeed', { speed: 10 }); onClose(); } },
-    { id: 'act-save', type: 'action', label: 'Save Game', sublabel: 'Quick save', icon: <span style={{ fontSize: '14px' }}>S</span>, action: () => { wsClient.send('SaveGame', {}); onClose(); } },
-  ], [wsClient, onClose]);
+    { id: 'act-pause', type: 'action', label: t('commandBar.pause'), sublabel: t('commandBar.pauseSub'), icon: <span style={{ fontSize: '14px' }}>||</span>, action: () => { wsClient.send('SetSpeed', { speed: 0 }); onClose(); } },
+    { id: 'act-play', type: 'action', label: t('commandBar.play1x'), sublabel: t('commandBar.playSub'), icon: <ArrowRight size={14} />, action: () => { wsClient.send('SetSpeed', { speed: 1 }); onClose(); } },
+    { id: 'act-fast', type: 'action', label: t('commandBar.fast5x'), sublabel: t('commandBar.fastSub'), icon: <ArrowRight size={14} />, action: () => { wsClient.send('SetSpeed', { speed: 5 }); onClose(); } },
+    { id: 'act-max', type: 'action', label: t('commandBar.max10x'), sublabel: t('commandBar.maxSub'), icon: <ArrowRight size={14} />, action: () => { wsClient.send('SetSpeed', { speed: 10 }); onClose(); } },
+    { id: 'act-save', type: 'action', label: t('commandBar.saveGame'), sublabel: t('commandBar.quickSaveSub'), icon: <span style={{ fontSize: '14px' }}>S</span>, action: () => { wsClient.send('SaveGame', {}); onClose(); } },
+  ], [wsClient, onClose, t]);
 
   // Parse potential buy/sell commands
   const parseTradeCommand = useCallback((q: string): CommandResult | null => {
@@ -169,7 +171,7 @@ export function CommandBar({ wsClient, isOpen, onClose }: CommandBarProps) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder='Search stocks, navigate, or "buy 100 AAPL"...'
+            placeholder={t('commandBar.placeholder')}
             style={S.input}
           />
           <kbd style={S.kbd}>ESC</kbd>
@@ -200,7 +202,7 @@ export function CommandBar({ wsClient, isOpen, onClose }: CommandBarProps) {
                   <span style={S.resultSub}>{r.sublabel}</span>
                 </div>
                 <span style={S.resultType}>
-                  {r.type === 'stock' ? 'STOCK' : r.type === 'etf' ? 'ETF' : r.type === 'nav' ? 'NAV' : 'CMD'}
+                  {r.type === 'stock' ? t('commandBar.stock') : r.type === 'etf' ? t('commandBar.etf') : r.type === 'nav' ? t('commandBar.nav') : t('commandBar.cmd')}
                 </span>
               </button>
             ))}
@@ -208,15 +210,15 @@ export function CommandBar({ wsClient, isOpen, onClose }: CommandBarProps) {
         )}
 
         {results.length === 0 && query && (
-          <div style={S.empty}>No results for "{query}"</div>
+          <div style={S.empty}>{t('commandBar.noResults', { query })}</div>
         )}
 
         {/* Footer hints */}
         <div style={S.footer}>
-          <span style={S.hint}><kbd style={S.kbdSmall}>↑↓</kbd> Navigate</span>
-          <span style={S.hint}><kbd style={S.kbdSmall}>Enter</kbd> Select</span>
-          <span style={S.hint}><kbd style={S.kbdSmall}>Esc</kbd> Close</span>
-          <span style={S.hint}>Try: <span className="mono" style={{ color: 'var(--text-accent)' }}>buy 50 SIMX</span></span>
+          <span style={S.hint}><kbd style={S.kbdSmall}>↑↓</kbd> {t('commandBar.navigate')}</span>
+          <span style={S.hint}><kbd style={S.kbdSmall}>Enter</kbd> {t('commandBar.select')}</span>
+          <span style={S.hint}><kbd style={S.kbdSmall}>Esc</kbd> {t('commandBar.close')}</span>
+          <span style={S.hint}>{t('commandBar.tryBuy')} <span className="mono" style={{ color: 'var(--text-accent)' }}>buy 50 SIMX</span></span>
         </div>
       </div>
     </div>
